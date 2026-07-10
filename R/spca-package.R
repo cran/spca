@@ -1,125 +1,96 @@
 
-
-#' Anthropometric measures of criminals
+#' Least Squares Sparse Principal Components Analysis
+#'
+#' The package provides functions to compute LS-SPCA solutions, where sparsity is
+#'  imposed to Pearson's PCA's least-squares reconstruction objective. 
 #' 
-#' This dataset was used for the first application of PCA. It consists of the
-#' correlation matrix of seven measures of physical characteristics of a random
-#' sample of British criminals. This dataset was used for the first PCA application (by hand!).
-#' Useful for testing.
-#' 
-#' 
-#' @name anthrop
-#' @docType data
-#' @format A 7 by 7 correlation matrix.
-#' \describe{
-#' \item{\code{Head Length}}{}
-#' \item{\code{Head Breadth}}{} 
-#' \item{\code{Face Breadth}}{}
-#' \item{\code{Finger}}{}
-#' \item{\code{Cubit}}{}
-#' \item{\code{Foot}}{}
-#' \item{\code{Height}}{}
-#' }
-#' @references Macdonell, W. (1902). Criminal Anthropometry and the
-#' Identification of Criminals. \emph{Biometrika}, 1(2):177-227.
-#' @keywords datasets
-NULL
-
-
-
-
-
-#' Baseball hitters career and 1986 season total statistics
-#' 
-#' Correlation matrix of 16 statistics of major league hitters some of the
-#' overall career and others relative to the 1986 season. Available at StatLib.
-#' The matrix has a block structure, defined by season offensive play, career 
-#' offensive play and season defensive play.
-#' 
-#' 
-#' @name bsbl
-#' @docType data
-#' @format A \emph{16} by \emph{16} correlation matrix.
-#' \describe{
-#' \item{\code{TAB_86}}{times at bat in 1986}
-#' \item{\code{HIT_86}}{hits in 1986}
-#' \item{\code{HR_86}}{home runs in 1986}
-#' \item{\code{RUN_86}}{runs in 1986}
-#' \item{\code{RB_86}}{runs batted-in in 1986}
-#' \item{\code{WAL_86}}{walks in 1986}
-#' \item{\code{YC}}{years in the major leagues}
-#' \item{\code{TAB}}{times at bat during his career}
-#' \item{\code{HIT}}{hits during his career}
-#' \item{\code{HR}}{home runs during his career}
-#' \item{\code{RUN}}{runs during his career}
-#' \item{\code{RUNB}}{runs batted-in during his career}
-#' \item{\code{WAL}}{walks during his career}
-#' \item{\code{PO_86}}{put outs in 1986}
-#' \item{\code{ASS_86}}{assists in 1986}
-#' \item{\code{ERR_86}}{errors in 1986}
-#' }
-#' @source \url{http://lib.stat.cmu.edu/datasets/baseball.data}
-#' @keywords datasets
-NULL
-
-#' Baseball hitters career and 1986 season average statistics
-#' 
-#' Same data as above after averaging the career totals with the years in career. \cr
-#' The matrix no longer has a block structure.
+#' LS-SPCA is different for other SPCA methods that compute sparse PCs with
+#'  maximal variance. Details about LS-SPCA can be found in the articles cited below and in the extended vignette.
 #'  
-#' @name bsbl_avg
-#' @docType data
-#' @format A \emph{16} by \emph{16} correlation matrix. See 
-#' \code{\link{bsbl}} for variables names.
-#' @source \url{http://lib.stat.cmu.edu/datasets/baseball.data}
-#' @keywords datasets
-NULL
-
-#' Baseball hitters statistics labels reference table
+#' This release  accompanies the related article and is intended  to support full
+#'  reproduction of the results reported therein.
+#'
+#' Computation relies on efficient C++ routines and includes multiple options
+#'  for variable selection and sparse loading estimation.
+#'
+#' Fitting functions
+#' * [spca()] Computes LS-SPCA solutions from a data or covariance/correlation
+#'   matrix. Returns an  \link{spca_object} of class `spca`.
+#' * [pca()] Computes PCA solutions from a data or covariance/correlation
+#'   matrix. Returns an  \link{spca_object} of class `spca`.
+#'      
+#' S3 methods for objects of class `spca` include:
+#' [pca()] returns PCA results as an `spca` object.
+#' \strong{methods}
+#' * [print()]
+#' * [plot()]
+#' * [summary()]
 #' 
-#' This data frame provides descriptive labels for the variables in the
-#' bsbl datasets matching the short ones used. 
+#' \strong{Utilities}
+#' * [is.spca()] Verifies if an object inherits from class `spca`.
+#' * [compare_spca()] Compares two or more LS-SPCA solutions numerically 
+#'   and visually.
+#' * [new_spca()] Creates an `spca` object from a set of loadings.
+#' * [aggregate_by_group()] Sums loadings or contributions wrt an index vector.
+#' * [show_contributions_spca()] Prints the nonzero contributions 
+#'   separately for each sPC.
+#' * [change_loadings_sign_spca()] Changes the sign of the loadings and all
+#'      related elements in an 'spca` object`.
+#' * [spca_screeplot()] and  [wachter_qqplot()] Diagnostic plots usefull to 
+#'   determine the number of components to retain in PCA.  
 #'   
-#' @name bsbl_labels
-#' @docType data
-#' @format A \emph{16} by \emph{16} correlation matrix.
-#' @source \url{http://lib.stat.cmu.edu/datasets/baseball.data}
-#' @keywords datasets
+#' @references
+#' Merola, G. M. (2015). Least Squares Sparse Principal Component Analysis:
+#' a Backward Elimination approach to attain large loadings.
+#' \emph{Australia & New Zealand Journal of Statistics}, 57, 391--429.
+#' \doi{10.1111/anzs.12128}
+#'
+#' Merola, G. M. and Chen, G. (2019). Projection sparse principal component
+#' analysis: An efficient least squares method. \emph{Journal of Multivariate
+#' Analysis}, 173, 366--382. \doi{10.1016/j.jmva.2019.04.001}
+
+#' @useDynLib spca, .registration = TRUE
+#' @importFrom Rcpp evalCpp
+"_PACKAGE"
+NULL
+
+#spca object=================
+
+#' Sparse principal component analysis object
+#'
+#' Objects of class `spca` are returned by the fitting functions
+#' \code{spca()}, \code{pca()} and by \code{new_spca()}..
+#'
+#' @section Components:
+#' An object of class `spca` is a list with the following elements:
+#'
+#' \describe{
+#' \item{loadings}{\eqn{p \times r} matrix of sparse loadings.}
+#' \item{contributions}{\eqn{p \times r} matrix of loadings scaled to unit
+#'   \eqn{L_1} norm within each sPC.}
+#' \item{n_comps}{Number of sPCs.}
+#' \item{cardinality}{Number of nonzero loadings in each sPC.}
+#' \item{vexp}{Variance explained by each sPC.}
+#' \item{vexp_pc}{Variance explained by the corresponding PCs.}
+#' \item{cvexp}{Cumulative variance explained by the sPCs.}
+#' \item{rvexp}{Ratio of \code{vexp} to the variance explained by the
+#'   corresponding PC.}
+#' \item{rcvexp}{Ratio of \code{cvexp} to the cumulative variance explained by
+#'   the corresponding PCs.}
+#' \item{cor_with_pc}{Correlation between each sPC and the
+#'   corresponding PC.}
+#' \item{tot_var}{Total variance of the data.}
+#' \item{loadings_list}{List of nonzero loading vectors, one per sPC.}
+#' \item{spc_cor}{\eqn{n_comps \times n_comps} correlation matrix of the 
+#'   sPC scores.}
+#' \item{indices}{List of variable indices with nonzero loadings, one per sPC.}
+#' \item{scores}{Optional matrix of sPC scores, returned only when a data matrix
+#'   is supplied.}
+#' \item{parameters}{List of parameters used to compute the fit.}
+#' \item{call}{Matched call used to compute the fit.}
+#' }
+#' @name spca_object
+#' @family spca
 NULL
 
 
-#' Utilities for computing Sparse Principal Components with the LS SPCA method.
-#' 
-#' Sparse principal components have few loadings different from zero.  The
-#' functions in this package compute the sparse components with the method LS
-#' SPCA. These solutions attain the Least Squares approximation to the data
-#' using a correlation (or covariance) matrix.\cr \cr The solutions are
-#' obtained either through a Branch-and-Bound search (\code{\link{spcabb}}) or
-#' a more efficient iterative backward Elimination Algorithm
-#' (\code{\link{spcabe}}). \cr\cr If the indices of the sparse loadings are
-#' known, the LS SPCA solutions can be computed with \code{\link{spca}}\cr\cr
-#' The output is an object of class spca. The minimal spca object contains the
-#' following elements: \tabular{ll}{ loadings\tab A matrix with the loadings
-#' scaled to unit \eqn{L_2} norm in the columns.\cr vexp\tab A vector with the
-#' \% variance explained by each component.\cr vexpv\tab A vector with the \%
-#' variance explained by each principal component.\cr ind\tab A list of the indices
-#' of the sparse loadings.} The following methods
-#' are available \tabular{ll}{ \code{\link{print.spca}}\tab Prints the nonzero
-#' loadings\cr \code{\link{plot.spca}}\tab Plots the variance explained and the
-#' nonzero loadings\cr \code{\link{summary.spca}}\tab Prints summary statistics
-#' of the solutions\cr \code{\link{showload}}\tab shows and plots the spca
-#' loadings. Not implemented as an spca method.\cr \code{\link{compare.spca}}\tab
-#' Compares different spca objects, giving summaries and plots. Not implemented
-#' as an spca method. }
-#' 
-#' 
-#' @name spca-package
-#' @docType package
-#' @references Giovanni M. Merola. 2014. \emph{Least Squares Sparse Principal 
-#' Component Analysis: a Backward Elimination approach to attain large 
-#' loadings.} To appear on Austr.&NZ Jou. Stats. Giovanni M. Merola.\cr\cr
-#' Giovanni M. Merola. 2014. \emph{Sparse Principal Component Analysis: a
-#' Least Squares approximation approach.}  \url{http://arxiv.org/abs/1406.1381}
-#' @keywords package
-#' @seealso \code{\link{spcabb}} and \code{\link{spcabe} for usage examples}. 
-NULL
