@@ -33,8 +33,7 @@ summary(myspca, cor_with_pc = TRUE)
 plot(myspca, plot_type = "bar")
 
 #sPCs correlation
-round(myspca$spc_cor, 2)
-
+show_correlations(myspca)
 
 ## ----circular, message = FALSE, warning = FALSE, fig.width = 5, fig.height = 3----
 plot(myspca, plot_type = "c") # "c" for "circular"

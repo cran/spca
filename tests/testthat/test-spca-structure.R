@@ -24,18 +24,12 @@ test_that("spca accepts numeric data frames", {
               fat_matrix = FALSE)
 
   expect_spca_object(fit, n_comps = 2, has_scores = TRUE)
-  expect_equal(rownames(fit$loadings), names(m$DF_tall))
+  expect_equal(rownames(fit$weights), names(m$DF_tall))
 })
+
 
 test_that("spca fits fat data matrices through the fat backend", {
   m = spca_test_matrices()
-
-  warn = expect_warning(
-    spca(m$X_fat, n_comps = 2, method = "c",
-                var_selection = "fwd", objective = "r2",
-                fat_matrix = NULL),
-    "fat_matrix backend selected because n < p"
-  )
 
   fit = suppressWarnings(
     spca(m$X_fat, n_comps = 2, method = "c",

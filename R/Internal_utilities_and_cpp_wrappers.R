@@ -33,14 +33,14 @@
 # - make_vexp()
 # - scale_columns()
 # - standardize_data()
-# - get_minload
+# - get_minweight
 # - get_card
 # - make_contributions
 
 
 # Matrix products ======================
 
-#' Compute A times t(A)
+#' Compute A Times t(A)
 #'
 #' Wrapper around the C++ helper for \eqn{A A^T}.
 #'
@@ -53,7 +53,7 @@ aat = function(A) {
   aatC(A)
 }
 
-#' Compute t(A) times A
+#' Compute t(A) Times A
 #'
 #' Wrapper around the C++ helper for \eqn{A^T A}.
 #'
@@ -66,7 +66,7 @@ ata = function(A) {
   ataC(A)
 }
 
-#' Compute t(A) times B
+#' Compute t(A) Times B
 #'
 #' Wrapper around the C++ helper for \eqn{A^T B}.
 #'
@@ -81,7 +81,7 @@ atb = function(A, B) {
   atbC(A, B)
 }
 
-#' Compute A times B
+#' Compute A Times B
 #'
 #' Wrapper around the C++ helper for \eqn{A B}.
 #'
@@ -96,7 +96,7 @@ ab = function(A, B) {
   abC(A, B)
 }
 
-#' Compute A times t(B)
+#' Compute A Times t(B)
 #'
 #' Wrapper around the C++ helper for \eqn{A B^T}.
 #'
@@ -111,7 +111,7 @@ abt = function(A, B) {
   abtC(A, B)
 }
 
-#' Compute t(A) times D times A
+#' Compute t(A) Times D Times A
 #'
 #' Wrapper around the C++ helper for \eqn{A^T D A}.
 #'
@@ -126,7 +126,7 @@ atda = function(A, D) {
   atdaC(A, D)
 }
 
-#' Compute t(A) times D times B
+#' Compute t(A) Times D Times B
 #'
 #' Wrapper around the C++ helper for \eqn{A^T D B}.
 #'
@@ -145,7 +145,7 @@ atdb = function(A, D, B) {
 
 # Matrix-vector products
 
-#' Compute A times v
+#' Compute A Times v
 #'
 #' Wrapper around the C++ helper for \eqn{A v}.
 #'
@@ -160,7 +160,7 @@ av = function(A, v) {
   avC(A, v)
 }
 
-#' Compute t(A) times v
+#' Compute t(A) Times v
 #'
 #' Wrapper around the C++ helper for \eqn{A^T v}.
 #'
@@ -175,7 +175,7 @@ atv = function(A, v) {
   atvC(A, v)
 }
 
-#' Compute t(v) times A
+#' Compute t(v) Times A
 #'
 #' Wrapper around the C++ helper for \eqn{v^T A}.
 #'
@@ -190,7 +190,7 @@ vta = function(v, A) {
   vtaC(v, A)
 }
 
-#' Compute t(v) times A times u
+#' Compute t(v) Times A Times u
 #'
 #' Wrapper around the C++ helper for \eqn{v^T A u}.
 #'
@@ -207,7 +207,7 @@ vtau = function(v, A, u) {
   vtauC(v, A, u)
 }
 
-#' Compute t(v) times v
+#' Compute t(v) Times v
 #'
 #' Wrapper around the C++ helper for \eqn{v^T v}.
 #'
@@ -220,7 +220,7 @@ vtv = function(v) {
   vtvC(v)
 }
 
-#' Compute t(v) times u
+#' Compute t(v) Times u
 #'
 #' Wrapper around the C++ helper for \eqn{v^T u}.
 #'
@@ -237,7 +237,7 @@ vtu = function(v, u) {
 
 # Other linear algebra helpers
 
-#' Compute the trace of a matrix
+#' Compute the Trace of a Matrix
 #'
 #' Wrapper around the C++ trace helper.
 #'
@@ -251,7 +251,7 @@ trace_mat = function(S) {
 }
 
 #returns the eigendecomposition of S
-#' Compute a symmetric eigendecomposition
+#' Compute a Symmetric Eigendecomposition
 #'
 #' Compute eigenvectors and eigenvalues of a symmetric matrix.
 #'
@@ -267,7 +267,7 @@ eigen_sym = function(S) {
 }
 
 #returns only the eigenvalues of S
-#' Compute symmetric eigenvalues
+#' Compute Symmetric Eigenvalues
 #'
 #' Compute only the eigenvalues of a symmetric matrix.
 #'
@@ -282,7 +282,7 @@ eigenvalues_sym = function(S) {
 }
 
 ## returns the generalized eigendecomposition of Av = l Bv
-#' Compute a generalized symmetric eigendecomposition
+#' Compute a Generalized Symmetric Eigendecomposition
 #'
 #' Compute the generalized eigendecomposition \eqn{A v = \lambda B v}.
 #'
@@ -300,7 +300,7 @@ gen_eigen_sym = function(A, B) {
 }
 
 ## inverts a symmetric positive definite matrix
-#' Solve a symmetric positive-definite system
+#' Solve a Symmetric Positive-Definite System
 #'
 #' Invert or solve a symmetric positive-definite matrix through the C++ helper.
 #'
@@ -313,7 +313,7 @@ solve_spd = function(S) {
   solveC(S)
 }
 # transforms a variance/covariance matrix to a correlation matrix
-#' Convert a covariance matrix to a correlation matrix
+#' Convert a Covariance Matrix to a Correlation Matrix
 #'
 #' Convert a symmetric covariance matrix to the corresponding correlation
 #' matrix.
@@ -344,14 +344,14 @@ var2cor = function(S) {
 }
 
 
-# computes correlations between pairs of sPCs from loadings and covariance
+# computes correlations between pairs of sPCs from weights and covariance
 # matrix
-#' Compute correlations between sparse principal components
+#' Compute Correlations Between Sparse Principal Components
 #'
 #' Compute correlations between pairs of sparse principal components from a
-#' loadings matrix and covariance/correlation matrix.
+#' weights matrix and covariance/correlation matrix.
 #'
-#' @param A A numeric matrix or data frame of loadings.
+#' @param A A numeric matrix or data frame of weights.
 #' @param S A numeric symmetric covariance or correlation matrix or data frame.
 #'
 #' @return A numeric correlation matrix, or \code{NULL} if correlations cannot
@@ -402,12 +402,12 @@ make_spc_cor_S = function(A, S) {
 
 # wrapper for C++ function
 # computes the extra variance explained by difference
-#' Compute variance explained by sparse components
+#' Compute Variance Explained by Sparse Components
 #'
-#' Compute variance explained from a loadings matrix and covariance/correlation
+#' Compute variance explained from a weights matrix and covariance/correlation
 #' matrix.
 #'
-#' @param A A numeric matrix of loadings.
+#' @param A A numeric matrix of weights.
 #' @param S A numeric symmetric covariance or correlation matrix.
 #'
 #' @return Output from the C++ variance-explained helper.
@@ -431,7 +431,7 @@ make_vexp =  function (A, S) {
   
 }
 
-#' Scale matrix columns
+#' Scale Matrix Columns
 #'
 #' Scale each column of a matrix by an L1 or L2 norm.
 #'
@@ -457,7 +457,7 @@ scale_columns = function(M, normtype = 2, sig = NULL){
 }
 
 
-#' Standardize a data matrix
+#' Standardize a Data Matrix
 #'
 #' Center and/or scale columns of a matrix through the C++ helper.
 #' replicates R's scale without extra copying
@@ -478,7 +478,7 @@ standardize_data = function(M, center = TRUE, scale = TRUE){
   scaleC(M, center, scale)
 }
 
-#' Compute a correlation matrix without extra copying
+#' Compute a Correlation Matrix Without Extra Copying
 #'
 #' @param X A numeric matrix or data frame.
 #' @param center A logical value (default \code{TRUE}). Currently accepted for
@@ -495,7 +495,7 @@ cor_nocopy = function(X, center = TRUE, scale = TRUE){
 }
 
 #data manipulation ======
-#' Converts a vector to a list
+#' Convert a Vector to a List
 #'
 #' Convert a vector of group labels to a list of positions.
 #'
@@ -518,7 +518,7 @@ vec2list = function(vec) {
   li
 }
 
-#' Convert a list of indices to a vector
+#' Convert a List of Indices to a Vector
 #'
 #' Concatenate a list of indices and optionally remove duplicates or sort the
 #' result.
@@ -546,7 +546,7 @@ list2vec = function(li, uniq = TRUE, sorted = FALSE) {
   a
 }
 
-#' Convert a factor to a list of positions
+#' Convert a Factor to a List of Positions
 #'
 #' Convert a factor to a list with one element per level.
 #'
@@ -562,7 +562,7 @@ fac2list = function(fac) {
   li
 }
 
-#' Convert a list of indices to a factor
+#' Convert a List of Indices to a Factor
 #'
 #' Convert a list of positions to a factor with one level per list element.
 #'
@@ -586,7 +586,7 @@ list2fac = function(li) {
   factor(fa, levels = seq_along(li), labels = namex)
 }
 
-#' Convert a factor to ordered indices
+#' Convert a Factor to Ordered Indices
 #'
 #' Return positions ordered by factor level.
 #'
@@ -600,7 +600,7 @@ fac2index = function(fac) {
   (seq_along(fac))[order(vec)]
 }
 
-#' Convert a vector to a factor
+#' Convert a Vector to a Factor
 #'
 #' Convert a vector of group labels to a factor with sorted unique values as
 #' levels.
@@ -615,7 +615,7 @@ vec2fac = function(vec) {
   factor(val, levels = seq_along(u), labels = as.character(u))
 }
 
-#' Round the elements of a list
+#' Round the Elements of a List
 #'
 #' Apply \code{round()} to each element of a list.
 #'
@@ -629,28 +629,33 @@ roundl = function(li, d = 2) {
 }
 
 # spca object utilities ====================
-# returns the non-zero loading with the smallest absolute value for each column
-# input a matrix of loadings or contributions
-#' Get minimum nonzero loading magnitudes
+# returns the non-zero weight with the smallest absolute value for each column
+# input a matrix of weights or contributions
+#' Get Minimum Nonzero Weight Magnitudes
 #'
-#' Compute the smallest absolute nonzero loading or contribution in each column.
+#' Compute the smallest absolute nonzero weight or contribution in each column.
 #'
-#' @param smpc A numeric matrix of loadings or contributions.
+#' @param smpc A numeric matrix of weights or contributions.
 #' @param eps A numeric scalar (default \code{1e-4}). Values with absolute
 #'   magnitude less than or equal to this threshold are treated as zero.
 #'
 #' @return A numeric vector with one value per column.
 #' @noRd
-get_minload = function(smpc, eps = 1e-4){
+get_minweight = function(smpc, eps = 1e-4){
   if(!is.matrix(smpc))
-    stop("get_minload: a matrix of loadings or contributions is needed") 
+    stop("get_minweight: a matrix of weights or contributions is needed") 
   gl = function(x)
     min(abs(x[abs(x)> eps]))
   apply(smpc, 2, gl)
 }
 
-# returns the cardinality of the columns of a matrix of loadings  
-#' Compute loading cardinality
+# Legacy internal alias.
+get_minload = function(smpc, eps = 1e-4) {
+  get_minweight(smpc, eps = eps)
+}
+
+# returns the cardinality of the columns of a matrix of weights  
+#' Compute Weight Cardinality
 #'
 #' Count nonzero entries in an \code{spca} object, matrix, or vector.
 #'
@@ -663,7 +668,7 @@ get_minload = function(smpc, eps = 1e-4){
 #' @noRd
 get_card = function(A, thresh_card = 1e-4){
   if (is.spca(A) )
-    A = A$loadings
+    A = .get_spca_weights(A)
   if(is.vector(A))
     sum(abs(A) > thresh_card)
   else
@@ -675,15 +680,15 @@ get_card = function(A, thresh_card = 1e-4){
 }
 
 
-# computes the unit L1 norm contributions from a matrix of loadings
-# x can be either the matrix or vector of loadings or list containing a 
-# matrix called loadings
-#' Compute percentage contribution weights
+# computes the unit L1 norm contributions from a matrix of weights
+# x can be either the matrix or vector of weights or list containing a 
+# matrix called weights
+#' Compute Percentage Contribution Weights
 #'
-#' Convert loadings to unit L1-normalized contribution weights.
+#' Convert weights to unit L1-normalized contribution weights.
 #'
 #' @param x An \code{spca} object, numeric matrix, or numeric vector of
-#'   loadings.
+#'   weights.
 #'
 #' @return A numeric matrix or vector of contribution weights.
 #' @noRd
@@ -691,7 +696,7 @@ make_contributions = function(x){
   
   if (is.spca(x) && validate_spca(x))
   {
-    return(scale_columns(x$loadings, normtype = 1, sig = NULL))
+    return(scale_columns(.get_spca_weights(x), normtype = 1, sig = NULL))
   }
   if (is.data.frame(x))
     x = as.matrix(x)
@@ -701,15 +706,15 @@ make_contributions = function(x){
   if (is.vector(x))
     return(x/sum(abs(x)))
   
-  stop("x must be an spca object, or a matrix or vector of loadings")
+  stop("x must be an spca object, or a matrix or vector of weights")
 }
 
-#' Compute sparse component scores
+#' Compute Sparse Component Scores
 #'
-#' Compute component scores efficiently from a data matrix and sparse loadings.
+#' Compute component scores efficiently from a data matrix and sparse weights.
 #'
 #' @param X A numeric data matrix or data frame.
-#' @param A A numeric matrix or vector of loadings.
+#' @param A A numeric matrix or vector of weights.
 #'
 #' @return A numeric matrix of scores.
 #' @noRd 
@@ -719,12 +724,12 @@ make_scores = function(X, A){
   if ( is.vector(A))
     A = matrix(A, 1)
   if (!is.matrix(A))
-    stop("A must be a matrix of loadings")
+    stop("A must be a matrix of weights")
   
   if (is.data.frame(X))
     X = as.matrix(X)
   if (!is.matrix(X))
-    stop("X must be a matrix of loadings")
+    stop("X must be a matrix of weights")
   
   # C++ efficient computation of X*A when A is sparse  
   make_scoresC(X, A)

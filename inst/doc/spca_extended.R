@@ -29,8 +29,8 @@ data("holzinger_scales")
 ho_pca = pca(holzinger, screeplot = TRUE, qq_plot = FALSE)
 
 ## ----qqplot, fig.cap = "qq-plot with a fitted line."----------------
-wachter_qqplot(ho_pca$eigenvalues, p = ncol(holzinger),
-               n = nrow(holzinger), n_fitline = -3)
+qqplot_spca(ho_pca, n_vars = ncol(holzinger),
+               n_obs = nrow(holzinger), n_fitline = -3)
 
 ## ----spcadef, eval = FALSE------------------------------------------
 #    ho_spcadef = spca(M = holzinger,
@@ -49,7 +49,8 @@ ho_spcadef
 summary(ho_spcadef, cor_with_pc = TRUE)
 
 ## ----cor_comps------------------------------------------------------
-round(ho_spcadef$spc_cor, 2)
+show_correlations(ho_spcadef)
+#round(ho_spcadef$spc_cor, 2)
 
 ## ----barplot, fig.cap = "Bar plots of the contributions of each sPC."----
 plot(ho_spcadef)
@@ -58,7 +59,7 @@ plot(ho_spcadef)
 plot(ho_spcadef, n_plot = 3, plot_type = "c", controls = list(color_scale = "printsafe"))
 
 ## ----heatmap, fig.cap = "Heat maps of the contributions of each sPC compared with the corresponding PC contributions."----
-plot(ho_spcadef, pc_loadings = ho_pca$contributions, plot_type = "h")
+plot(ho_spcadef, pc_weights = ho_pca$contributions, plot_type = "h")
 
 ## ----fixed, eval = FALSE--------------------------------------------
 #  ho_spcafixed = spca(holzinger, alpha = 0.95, n_comps = 4,
@@ -75,9 +76,9 @@ summary(ho_spcafixed, cor_with_pc = TRUE)
 #                  objective = "r2", var_selection = "b")
 
 ## ----compare, fig.cap = "Bar plots of the contributions of two different spca fits."----
-compare_spca(list(ho_spcadef, ho_pspca), plot_loadings = TRUE,
+compare_spca(list(ho_spcadef, ho_pspca), plot_weights = TRUE,
              color_scale = "c",
-             print_loadings = FALSE,
+             print_weights = FALSE,
              col_short_names = TRUE,
              methods_names = c("cSPCA", "pSPCA")
              )
@@ -91,11 +92,11 @@ plot(ho_spcadef, variable_groups = holzinger_scales, controls =
 )
 
 ## ----new_spca-------------------------------------------------------
-A = cbind(ho_spcadef$loadings[, 1], ho_pspca$loadings[, 2])
+A = cbind(ho_spcadef$weights[, 1], ho_pspca$weights[, 2])
 ho_r = cor(holzinger)
 ho_spcahyb = new_spca(A, ho_r, method_name = "hybrid")
 
-## ----print_new_spca-------------------------------------------------
+## ----check_new_spca-------------------------------------------------
 is.spca(ho_spcahyb)
 
 ## ----load_msc, include = FALSE--------------------------------------
@@ -141,7 +142,7 @@ mss_alpha_table
 ## ----conv_sum, echo = FALSE-----------------------------------------
 compare_spca(list(mss_spcadef, mss_en_spcadef_obj),
              methods_names = c("ls", "el"),  col_short_names = FALSE,
-             print_loadings = FALSE, plot_loadings = FALSE, print_tables = TRUE, return_tables = FALSE)
+             print_weights = FALSE, plot_weights = FALSE, print_tables = TRUE, return_tables = FALSE)
 
 ## ----mss_aggr, echo = FALSE-----------------------------------------
 print(mss_agg_by_scale_print, quote = FALSE)
@@ -151,7 +152,7 @@ compare_spca(list(gas_lsspca, gas_enspca_obj, gas_abspca_obj),
              x_axis_var_names = FALSE,
              methods_names = c("ls", "en", "ab"),
              col_short_names = FALSE,
-             plot_loadings = FALSE, print_loadings = FALSE)
+             plot_weights = FALSE, print_weights = FALSE)
 
 ## ----cleanup, include = FALSE-------------------------------------------------
 options(old_opt)
