@@ -106,7 +106,7 @@ new_spca = function(A, S = NULL, X = NULL, method_name = NULL){
       stop("diag(S) is not compatible with X", call. = FALSE)
   }
   
-  if(!isSymmetric(S))
+  if(!is_symmetric_fast(S))
     stop("S must be a symmetric covariance or correlation matrix")
   
   if (any((colSums(A^2) - 1) > 1e-5)){
@@ -203,6 +203,7 @@ new_spca = function(A, S = NULL, X = NULL, method_name = NULL){
 #' @return The modified `spca_obj`.
 #' @family spca
 #' @export
+#' @keywords internal
 change_weights_sign_spca = function(spca_obj, index_to_change) {
   .Deprecated("change_sign")
   change_sign(spca_obj, index_to_change = index_to_change)
@@ -219,112 +220,178 @@ change_weights_sign_spca = function(spca_obj, index_to_change) {
 #' @return The modified `spca_obj`.
 #' @family spca
 #' @export
+#' @keywords internal
 change_loadings_sign_spca = function(spca_obj, index_to_change) {
   .Deprecated("change_sign")
   change_sign(spca_obj, index_to_change = index_to_change)
 }
 
-
-
-# change_sign==================
-##active===============
-#' Change Component Signs
+# change_sign=============
+#' Change Component Signs in a \code{pca} or \code{spca} Object
 #'
-#' Change the signs of selected components in a fitted object.
+#' Change the signs of selected Weights in a fitted object.
 #'
-#' @param spca_obj A fitted object.
-#' @param ... Additional arguments reserved for S3 method compatibility.
-#' @return The modified object.
+#' @param object An object of class \code{pca} or \code{spca}.
+#' @param spca_obj Deprecated alias for \code{object} (default \code{NULL}).
+#'   Supply only one of \code{object} and \code{spca_obj}. Using the old
+#'   argument name issues a warning.
+#' @param index_to_change An integer vector of component indices whose signs
+#'   should be changed.
+#' @return The modified object, preserving its classes.
+#' @examples
+#' data(holzinger)
+#' ho_cspca = spca(holzinger, n_comps = 4)
+#' show_correlations(ho_cspca) 
+#' # In applications we would change only the fourth set of weights
+#' ho_changed = change_sign(ho_cspca, index_to_change = c(2, 4))
+#' is.spca(ho_changed)
+#' show_weights(ho_cspca, cols = 2)
+#' show_weights(ho_changed, cols = 2)
+#' show_correlations(ho_changed) 
 #' @family spca
+#' @family pca
 #' @export
-change_sign = function(spca_obj, ...) {
+change_sign = function(object, index_to_change,
+    spca_obj = NULL) {
+  if (!missing(spca_obj)) {
+    if (!missing(object)) {
+      stop("Supply only one of `object` and `spca_obj`.",
+           call. = FALSE)
+    }
+    warning("`spca_obj` is deprecated; use `object` instead.",
+            call. = FALSE)
+    return(change_sign(
+      object = spca_obj,
+      index_to_change = index_to_change
+    ))
+  }
+
   UseMethod("change_sign")
 }
 
-#' Change Signs in an SPCA Object
-#'
-#' @param spca_obj An object of class \code{spca}.
-#' @param index_to_change An integer vector of component indices whose signs
-#'   should be changed.
-#' @return The modified \code{spca} object.
 #' @rdname change_sign
-#' @method change_sign spca
-#' @export
-change_sign.spca = function(spca_obj, index_to_change, ...) {
+#' @exportS3Method
+change_sign.spca = function(object, index_to_change,
+    spca_obj = NULL) {
+  if (!missing(spca_obj)) {
+    if (!missing(object)) {
+      stop("Supply only one of `object` and `spca_obj`.",
+           call. = FALSE)
+    }
+    warning("`spca_obj` is deprecated; use `object` instead.",
+            call. = FALSE)
+    object = spca_obj
+  }
+
   
   if (length(index_to_change) < 1L ||
       !is.numeric(index_to_change) ||
       anyNA(index_to_change) ||
       any(index_to_change != as.integer(index_to_change)) ||
       any(index_to_change < 1L) ||
-      any(index_to_change > spca_obj$n_comps)) {
+      any(index_to_change > object$n_comps)) {
     stop("index_to_change must contain valid component indices",
          call. = FALSE)
   }
   
-  weights = .get_spca_weights(spca_obj)
-  weights_list = .get_spca_weights_list(spca_obj, required = FALSE)
+  weights = .get_spca_weights(object)
+  weights_list = .get_spca_weights_list(object, required = FALSE)
   
   for (i in as.integer(index_to_change)) {
     weights[, i] = -weights[, i]
-    spca_obj$contributions[, i] = -spca_obj$contributions[, i]
+    object$contributions[, i] = -object$contributions[, i]
     
     if (!is.null(weights_list))
       weights_list[[i]] = -weights_list[[i]]
-    if (!is.null(spca_obj$scores))
-      spca_obj$scores[, i] = -spca_obj$scores[, i]
-    if (!is.null(spca_obj$spc_cor)) {
-      spca_obj$spc_cor[i, ] = -spca_obj$spc_cor[i, ]
-      spca_obj$spc_cor[, i] = -spca_obj$spc_cor[, i]
+    if (!is.null(object$scores))
+      object$scores[, i] = -object$scores[, i]
+    if (!is.null(object$spc_cor)) {
+      object$spc_cor[i, ] = -object$spc_cor[i, ]
+      object$spc_cor[, i] = -object$spc_cor[, i]
     }
-    if (!is.null(spca_obj$cor_with_pc))
-      spca_obj$cor_with_pc[i] = -spca_obj$cor_with_pc[i]
+    if (!is.null(object$cor_with_pc))
+      object$cor_with_pc[i] = -object$cor_with_pc[i]
   }
   
-  if (!is.null(spca_obj$weights))
-    spca_obj$weights = weights
+  if (!is.null(object$weights))
+    object$weights = weights
   else
-    spca_obj$loadings = weights
+    object$loadings = weights
   
   if (!is.null(weights_list)) {
-    if (!is.null(spca_obj$weights_list))
-      spca_obj$weights_list = weights_list
+    if (!is.null(object$weights_list))
+      object$weights_list = weights_list
     else
-      spca_obj$loadings_list = weights_list
+      object$loadings_list = weights_list
   }
   
-  spca_obj
+  object
 }
 
 # show_weights==================
-#' Show SPCA Weights or Contributions
+#' Show the Weights or Contributions of a \code{pca} or \code{spca} Object
 #'
 #' Show selected nonzero component weights or their unit-L1 contributions.
 #'
-#' @param spca_obj A fitted object.
-#' @return The selected weights or contributions when requested; otherwise
-#'   \code{NULL} invisibly.
-#' @family spca
-#' @export
-show_weights = function(spca_obj, ...) {
-  UseMethod("show_weights")
-}
-
-#' @param spca_obj An object of class \code{spca}.
-#' @param cols An integer vector or \code{NULL}. Components to show.
+#' @param object An object of class \code{pca} or \code{spca}.
+#' @param spca_obj Deprecated alias for \code{object} (default \code{NULL}).
+#'   Supply only one of \code{object} and \code{spca_obj}. Using the old
+#'   argument name issues a warning.
+#' @param cols An integer vector selecting components. If a single positive
+#'   integer is supplied, components \code{1:cols} are included.
+#'   If \code{NULL}, all components are included.
 #' @param contribution A logical value. If \code{TRUE}, show unit-L1
 #'   contributions; otherwise, show the original nonzero weights.
 #' @param print_list A logical value indicating whether to print the result.
 #' @param return_list A logical value indicating whether to return the result.
 #' @param ... Additional arguments reserved for S3 method compatibility.
-#' @rdname show_weights
-#' @method show_weights spca
+#' @return The selected weights or contributions when requested; otherwise
+#'   \code{NULL} invisibly.
+#' @family spca
+#' @family pca
 #' @export
+show_weights = function(
+    object, cols = NULL, contribution = TRUE, print_list = TRUE,
+    return_list = FALSE, ...,
+    spca_obj = NULL) {
+  if (!missing(spca_obj)) {
+    if (!missing(object)) {
+      stop("Supply only one of `object` and `spca_obj`.",
+           call. = FALSE)
+    }
+    warning("`spca_obj` is deprecated; use `object` instead.",
+            call. = FALSE)
+    return(show_weights(
+      object = spca_obj,
+      cols = cols,
+      contribution = contribution,
+      print_list = print_list,
+      return_list = return_list,
+      ...
+    ))
+  }
+
+  UseMethod("show_weights")
+}
+
+#' @rdname show_weights
+#' @exportS3Method
 show_weights.spca = function(
-    spca_obj, cols = NULL, contribution = TRUE, print_list = TRUE,
-    return_list = FALSE, ...) {
+    object, cols = NULL, contribution = TRUE, print_list = TRUE,
+    return_list = FALSE, ...,
+    spca_obj = NULL) {
+  if (!missing(spca_obj)) {
+    if (!missing(object)) {
+      stop("Supply only one of `object` and `spca_obj`.",
+           call. = FALSE)
+    }
+    warning("`spca_obj` is deprecated; use `object` instead.",
+            call. = FALSE)
+    object = spca_obj
+  }
+
   
-  if (!validate_spca(spca_obj))
+  if (!validate_spca(object))
     stop("show_weights requires an spca object as first argument",
          call. = FALSE)
   validate_booleans(
@@ -334,14 +401,18 @@ show_weights.spca = function(
   )
   
   if (is.null(cols))
-    cols = seq_along(spca_obj$vexp)
+    cols = seq_along(object$vexp)
   if (!is.numeric(cols) || anyNA(cols) ||
       any(cols != as.integer(cols)) ||
-      any(cols < 1L) || any(cols > spca_obj$n_comps)) {
+      any(cols < 1L) || any(cols > object$n_comps)) {
     stop("cols must contain valid component indices", call. = FALSE)
   }
   
-  values = .get_spca_weights_list(spca_obj)[as.integer(cols)]
+  if (length(cols) == 1L)
+    cols = seq_len(cols)
+  
+  values = .get_spca_weights_list(object)[as.integer(cols)]
+  
   if (contribution)
     values = lapply(values, function(a) a / sum(abs(a)))
   if (length(values) == 1L)
@@ -356,14 +427,54 @@ show_weights.spca = function(
   invisible(NULL)
 }
 
-#show_correlations=============
-#' Show Correlations from an SPCA Object
+## show_contributions_spca ==================
+#' Shows the non-zero contributions separately for each component (Deprecated).
+#' Use \code{show_weights()} instead.. 
+#' It just turns an spca object loadings_list into a list of loadings 
+#' 
+#' @param spca_obj An spca object
+#' 
+#' @param cols A vector containing the indices of the loadings to be shown.  Can
+#'  be a single value. if missing all loadings are shown: If an integer is
+#'  passed, only that dimension will be returned.
+#' @details
+#'  Deprecated, will not work for spca version > 1.1.1. Use \code{show_weights()}.
+#' @param return_list Logical: if `TRUE` the list is returned
+#' @family spca
+#' @keywords internal
+#' @export 
+show_contributions_spca = function(spca_obj, cols = NULL, return_list = FALSE)
+{
+  test = validate_spca(spca_obj)
+  if (!test)
+    stop("show_loadings requires an spca object as first argument")
+  
+  if(is.null(cols)){
+    cols = seq_along(spca_obj$vexp)
+  }
+  
+  contributions = lapply(spca_obj$loadings_list, function(x) x/ sum(abs(x)))
+  
+  message("Percentage Contributions")
+  print(contributions)
+  
+  if (return_list == TRUE)
+    return(contributions)
+  
+  invisible()
+}
+
+#show_correlations===========
+#' Show Component Correlations for a \code{pca} or \code{spca} Object
 #'
 #' Print and optionally return the mutual correlations among sparse principal
 #' components and their correlations with the corresponding principal
 #' components.
 #'
-#' @param spca_obj An object of class \code{spca}.
+#' @param object An object of class \code{pca} or \code{spca}.
+#' @param spca_obj Deprecated alias for \code{object} (default \code{NULL}).
+#'   Supply only one of \code{object} and \code{spca_obj}. Using the old
+#'   argument name issues a warning.
 #' @param type A character value specifying which correlations to show. Values
 #'   beginning with \code{"s"}, \code{"p"}, or \code{"b"} select the mutual
 #'   sPC correlations, the correlations with the corresponding PCs, or both,
@@ -374,7 +485,6 @@ show_weights.spca = function(
 #'   print the requested correlations.
 #' @param return_matrices A logical value (default \code{FALSE}). If
 #'   \code{TRUE}, return the requested unrounded numeric matrix or matrices.
-#' @param ... Additional arguments reserved for S3 method compatibility.
 #'
 #' @return If \code{return_matrices = TRUE}, a numeric matrix when one type of
 #'   correlation is requested, or a named list of two numeric matrices when
@@ -387,19 +497,49 @@ show_weights.spca = function(
 #' show_correlations(ho_cspca, type = "s", return_matrices = TRUE)
 #'
 #' @family spca
+#' @family pca
 #' @export
-show_correlations = function(spca_obj, ...) {
+show_correlations = function(
+    object, type = c("both", "spcs", "pcs"), digits = 2, 
+    print_matrices = TRUE, return_matrices = FALSE,
+    spca_obj = NULL) {
+  if (!missing(spca_obj)) {
+    if (!missing(object)) {
+      stop("Supply only one of `object` and `spca_obj`.",
+           call. = FALSE)
+    }
+    warning("`spca_obj` is deprecated; use `object` instead.",
+            call. = FALSE)
+    return(show_correlations(
+      object = spca_obj,
+      type = type,
+      digits = digits,
+      print_matrices = print_matrices,
+      return_matrices = return_matrices
+    ))
+  }
+
   UseMethod("show_correlations")
 }
 
 #' @rdname show_correlations
-#' @method show_correlations spca
-#' @export
+#' @exportS3Method
 show_correlations.spca = function(
-    spca_obj, type = "both", digits = 2, print_matrices = TRUE,
-    return_matrices = FALSE, ...) {
+    object, type = c("both", "spcs", "pcs"), digits = 2, 
+    print_matrices = TRUE, return_matrices = FALSE,
+    spca_obj = NULL) {
+  if (!missing(spca_obj)) {
+    if (!missing(object)) {
+      stop("Supply only one of `object` and `spca_obj`.",
+           call. = FALSE)
+    }
+    warning("`spca_obj` is deprecated; use `object` instead.",
+            call. = FALSE)
+    object = spca_obj
+  }
+
   
-  if (!is.spca(spca_obj))
+  if (!is.spca(object))
     stop("`show_correlations()` requires an `spca` object as first argument.",
          call. = FALSE)
   
@@ -429,10 +569,10 @@ show_correlations.spca = function(
   spc_pc_correlations = NULL
   
   if (need_spc) {
-    spc_correlations = spca_obj[["spc_cor"]]
+    spc_correlations = object[["spc_cor"]]
     
     if (is.null(spc_correlations)) {
-      scores = spca_obj[["scores"]]
+      scores = object[["scores"]]
       if (is.matrix(scores) && is.numeric(scores))
         spc_correlations = stats::cor(scores)
     }
@@ -449,7 +589,7 @@ show_correlations.spca = function(
   }
   
   if (need_pc) {
-    cor_with_pc = spca_obj[["cor_with_pc"]]
+    cor_with_pc = object[["cor_with_pc"]]
     
     if (!is.numeric(cor_with_pc) || length(cor_with_pc) < 1L ||
         anyNA(cor_with_pc)) {
@@ -513,25 +653,21 @@ show_correlations.spca = function(
   invisible(NULL)
 }
 
-
 # aggregate_by_group==================
-#' Aggregate SPCA Weights or Contributions by Group
+#' Aggregate Weights or Contributions of a \code{pca} or \code{spca} Object by Group
 #'
 #' Aggregate component weights or contributions according to a grouping
 #' variable.
-#'
-#' @param spca_obj A fitted object.
-#' @return The aggregated matrix, visibly when \code{return_table = TRUE} and
-#'   invisibly otherwise.
-#' @family spca
-#' @export
-aggregate_by_group = function(spca_obj, ...) {
-  UseMethod("aggregate_by_group")
-}
-
-#' @param spca_obj An object of class \code{spca}.
-#' @param groups A vector or factor with one group label per variable.
-#' @param only_nonzero A logical value indicating whether to omit groups whose
+#' @param object An object of class \code{pca} or \code{spca}.
+#' @param spca_obj Deprecated alias for \code{object} (default \code{NULL}).
+#'   Supply only one of \code{object} and \code{spca_obj}. Using the old
+#'   argument name issues a warning.
+#' @param variable_groups A vector or factor with one group label per variable.
+#' @param cols An integer vector selecting components. If a single positive
+#'   integer is supplied, components \code{1:cols} are included.
+#'   If \code{NULL}, all components are included.
+#' @param only_nonzero A logical value indicating whether to omit
+#'  variable_groups whose
 #'   values are zero in every selected component.
 #' @param contributions A logical value. If \code{TRUE}, aggregate percentage
 #'   contributions; otherwise, aggregate weights.
@@ -539,16 +675,63 @@ aggregate_by_group = function(spca_obj, ...) {
 #' @param print_table A logical value indicating whether to print the table.
 #' @param return_table A logical value indicating whether to return the table
 #'   visibly.
-#' @param ... Additional arguments reserved for S3 method compatibility.
-#' @rdname aggregate_by_group
-#' @method aggregate_by_group spca
+#' @family spca
+#' @family pca
 #' @export
+aggregate_by_group = function(object, 
+                              variable_groups,
+                              cols = NULL,
+                              only_nonzero = TRUE,
+                              contributions = TRUE,
+                              digits = ifelse(contributions, 1, 3), 
+                              print_table = TRUE,
+                              return_table = FALSE,
+    spca_obj = NULL) {
+  if (!missing(spca_obj)) {
+    if (!missing(object)) {
+      stop("Supply only one of `object` and `spca_obj`.",
+           call. = FALSE)
+    }
+    warning("`spca_obj` is deprecated; use `object` instead.",
+            call. = FALSE)
+    return(aggregate_by_group(
+      object = spca_obj,
+      variable_groups = variable_groups,
+      cols = NULL, 
+      only_nonzero = only_nonzero,
+      contributions = contributions,
+      digits = digits,
+      print_table = print_table,
+      return_table = return_table
+    ))
+  }
+
+  UseMethod("aggregate_by_group")
+}
+
+#' @rdname aggregate_by_group
+#' @exportS3Method
 aggregate_by_group.spca = function(
-    spca_obj, groups, only_nonzero = TRUE, contributions = TRUE,
-    digits = ifelse(contributions, 1, 3), print_table = TRUE,
-    return_table = FALSE, ...) {
+    object, variable_groups, 
+    cols = NULL, 
+    only_nonzero = TRUE, 
+    contributions = TRUE,
+    digits = ifelse(contributions, 1, 3), 
+    print_table = TRUE,
+    return_table = FALSE,
+    spca_obj = NULL) {
+  if (!missing(spca_obj)) {
+    if (!missing(object)) {
+      stop("Supply only one of `object` and `spca_obj`.",
+           call. = FALSE)
+    }
+    warning("`spca_obj` is deprecated; use `object` instead.",
+            call. = FALSE)
+    object = spca_obj
+  }
+
   
-  if (!validate_spca(spca_obj))
+  if (!validate_spca(object))
     stop("aggregate_by_group requires an spca object as first argument",
          call. = FALSE)
   validate_booleans(
@@ -557,18 +740,32 @@ aggregate_by_group.spca = function(
     print_table = print_table,
     return_table = return_table
   )
-  if ((!is.vector(groups) && !is.factor(groups)) || anyNA(groups))
-    stop("groups must be a vector or factor without missing values",
+  if ((!is.vector(variable_groups) && !is.factor(variable_groups)) || 
+      anyNA(variable_groups))
+    stop("variable_groups must be a vector or factor without missing values",
          call. = FALSE)
-  if (length(groups) != nrow(.get_spca_weights(spca_obj)))
-    stop("groups must have one element per variable", call. = FALSE)
+  if (length(variable_groups) != nrow(.get_spca_weights(object)))
+    stop("variable_groups must have one element per variable", call. = FALSE)
   
   if (contributions)
-    values = spca_obj$contributions
+    values = object$contributions
   else
-    values = .get_spca_weights(spca_obj)
+    values = .get_spca_weights(object)
   
-  out = rowsum(values, group = groups, reorder = FALSE)
+  if (is.null(cols))
+    cols = seq_len(ncol(values))
+  
+  if (!is.numeric(cols) || length(cols) == 0L ||
+      any(!is.finite(cols)) || any(cols != floor(cols)) ||
+      any(cols < 1 | cols > ncol(values)))
+    stop("cols must contain valid component indices.", call. = FALSE)
+  
+  if (length(cols) == 1L)
+    cols = seq_len(cols)
+  
+  values = values[, cols, drop = FALSE]
+  
+  out = rowsum(values, group = variable_groups, reorder = FALSE)
   if (only_nonzero)
     out = out[rowSums(abs(out)) > 1e-4, , drop = FALSE]
   
@@ -592,4 +789,7 @@ aggregate_by_group.spca = function(
     return(out)
   invisible(out)
 }
+
+
+
 

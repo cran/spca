@@ -20,35 +20,41 @@ holzinger_scales
 
 ## ----pca_checks, message = FALSE, warning = FALSE, fig.show = "hold", out.width = "47%", fig.width = 4, fig.height = 4----
 ho_pca = pca(holzinger, screeplot =  TRUE, qq_plot = TRUE)
-summary(ho_pca,cols = 10)
+summary(ho_pca, cols = 10)
 
 ## ----run_spca, message = FALSE, warning = FALSE-------------------------------
-myspca = spca(holzinger, n_comps = 4)
+ho_spca = spca(holzinger, n_comps = 4)
 
-## ----methods, message = TRUE, warning = FALSE, fig.height=5, fig.width = 5----
-myspca # print
+## ----methods, message = TRUE, warning = FALSE, fig.height = 5, fig.width = 5----
+ho_spca # print
 
-summary(myspca, cor_with_pc = TRUE)
+summary(ho_spca, cor_with_pc = TRUE)
 
-plot(myspca, plot_type = "bar")
+plot(ho_spca, plot_type = "b")
 
 #sPCs correlation
-show_correlations(myspca)
+show_correlations(ho_spca)
+
+## ----spca_vs_pca, message = FALSE, warning = FALSE, fig.width = 5, fig.height = 5----
+compare_spca(list(ho_pca, ho_spca), variable_groups = holzinger_scales, 
+             x_axis_var_names = FALSE,  methods_names = c("PCA", "SPCA")
+             )
 
 ## ----circular, message = FALSE, warning = FALSE, fig.width = 5, fig.height = 3----
-plot(myspca, plot_type = "c") # "c" for "circular"
+plot(ho_spca, plot_type = "c",     # "c" for "circular"
+     controls = list(variable_names = "auto"))
 
 ## ----heatmap, message = FALSE, warning = FALSE, fig.width = 5, fig.height = 4----
-plot(myspca, plot_type = "h", controls = list(legend_position = "b")) # "h" is enough to call "heatmap" type and "b" to indicate "bottom".
+plot(ho_spca, plot_type = "h", controls = list(legend_position = "b")) # "h" is enough to call "heatmap" type and "b" to indicate "bottom".
 
 ## ----groups, message = FALSE, warning = FALSE, fig.width = 5, fig.height = 4----
-plot(myspca, plot_type = "bars", variable_groups = holzinger_scales, controls = list(legend_position = "right")) 
+plot(ho_spca, plot_type = "bars", variable_groups = holzinger_scales, controls = list(legend_position = "right")) 
 
-aggregate_by_group(myspca,groups = holzinger_scales)
+aggregate_by_group(ho_spca, variable_groups = holzinger_scales)
 
 ## ----spca90, message = FALSE, warning = FALSE, fig.width = 5, fig.height = 5----
-myspca90 = spca(holzinger, n_comps = 4, alpha = 0.9)
+ho_spca90 = spca(holzinger, n_comps = 4, alpha = 0.9)
 
-compare_spca(obj_list = list(myspca, myspca90), 
+compare_spca(obj_list = list(ho_spca, ho_spca90), 
              methods_names = c("alpha = 95", "alpha = 90"))
 

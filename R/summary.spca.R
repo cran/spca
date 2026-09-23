@@ -1,10 +1,11 @@
 
 
 #  summary.spca==============
-#' Summarize an \code{spca} Object
+#' Summarize the Variance Explained and Sparsity of a \code{pca} or \code{spca} Object
 #'
-#' Print and optionally return summary statistics for evaluating an \code{spca}
-#' object and comparing it with the corresponding PCA solution.
+#' Print and, optionally, return summary statistics for evaluating an
+#'  \code{spca} object and comparing it with the corresponding PCA 
+#'  solutions. It can also print the summaries of a \code{pca} object.
 #'
 #' For each component, the following summaries can be computed:
 #' \tabular{ll}{ 
@@ -20,10 +21,10 @@
 #' requested.\cr
 #' }
 #'
-#' @param object An object of class \code{spca}.
-#' @param cols An integer vector of component indices. If missing, all
-#'   available components are included. If a single integer is supplied,
-#'   components \code{1:cols} are included.
+#' @param object An object of class \code{spca} or \code{pca}.
+#' @param cols An integer vector of component indices or \code{NULL}.
+#'   If \code{NULL} (the default), all available components are included.
+#'   If a single integer is supplied, components \code{1:cols} are included.
 #' @param contributions A logical value (default \code{TRUE}). If \code{TRUE},
 #'   minimum nonzero values are computed from percentage contributions;
 #'   otherwise, they are computed from weights.
@@ -55,11 +56,10 @@
 #' summary(ho_cspca)
 #' 
 #' @family spca
-#' @export
-#' @method summary spca
+#' @exportS3Method 
 summary.spca = function(
     object, 
-    cols, 
+    cols = NULL, 
     contributions = TRUE, 
     variance_metrics = c("both", "cumulative_relative",
                          "relative", "none"),
@@ -81,17 +81,27 @@ summary.spca = function(
     stop("summary.spca requires an spca object as first argument")
   
   # spca already validated
-  fun_inp = as.list(match.call(expand.dots = FALSE))[-(1:2)]
-  fun_inp = lapply(fun_inp, eval, envir = environment())
-  validate_no_na(arg_list = eval(fun_inp))  
+  fun_inp = list(
+    cols = cols,
+    contributions = contributions,
+    variance_metrics = variance_metrics,
+    min_weight = min_weight,
+    cor_with_pc = cor_with_pc,
+    return_table = return_table,
+    print_table = print_table,
+    thresh_card = thresh_card
+  )
+  
+  validate_no_na(arg_list = fun_inp)  
   
   # Determine columns
-  if (missing(cols)) {
-    cols = 1:min(ncol(.get_spca_weights(object)), length(object$vexp))
-  } else 
-    if (length(cols) == 1L) {
-      cols = seq(cols)
-    }
+  if (is.null(cols)) {
+    cols = seq_len(min(ncol(.get_spca_weights(object)),
+                       length(object$vexp)))
+  } else if (length(cols) == 1L) {
+    cols = seq(cols)
+  }
+  
   if (any(cols) > ncol(.get_spca_weights(object)))
     stop("cols cannot contain values larger than the number of components
          available")
@@ -112,6 +122,10 @@ summary.spca = function(
     Vexp = object$vexp,
     Cvexp = cumsum(object$vexp)
   )
+  if (is.pca(object)) {
+    variance_metrics = "none"
+    cor_with_pc = FALSE
+  }
   
   # Add variance comparison metrics based on user choice
   if (variance_metrics %in% c("cumulative_relative", "both")) {
@@ -144,7 +158,8 @@ summary.spca = function(
   
   # Not all columns may be selected 
   out = as.matrix(out[, cols, drop = FALSE])
-  colnames(out) = paste0("sPC", cols)
+  
+  colnames(out) =  paste0(ifelse(is.pca(object), "PC", "sPC"), cols)
   
   if (print_table) {
     out_formatted = format_summary_matrix(out, contributions)

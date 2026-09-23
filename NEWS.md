@@ -1,10 +1,26 @@
+# spca 1.1.4
+- spca's parameter `fixed_index_list` now accepts same index in different
+   components it also allows to require that only some components have fixed 
+   indices.
+- **created new class `pca` for pca() output with its own methods**. 
+- renamed pca plotting methods to 
+    scree_plot and mp_qqplot(). Old functions kept as deprecated
+- scree_plot produces x-axis with integer tick-marks
+- Heat map has low = red and high = blue
+- eliminated help entries in index for deprecated functions
+- improved symmetry check for gramian input
+- fixed minor bugs in methods, reinforced checks for cor and n_obs in mp_qqplot
+    and pca
+- reviewed and harmonized vignettes with JSS article    
 
 # spca 1.1.3
 **Renamed loadings to weights**
 - objects now return `weights`, as documented.
 - same changes in C++ code but no need of backcompatibility
-- preserved backward compatibility by retaining the old function names as deprecated wrappers for the new S3 methods
-- preserved compatibility with older spca objects containing loadings-named elements through internal accessors
+- preserved backward compatibility by retaining the old function names as    
+   deprecated wrappers for the new S3 methods
+- preserved compatibility with older spca objects containing loadings-named 
+   elements through internal accessors
 
 **Converted functions to methods and added new ones**
 - changed function `aggregate_by_group_spca()` to method `aggregate_by_group()`
@@ -20,6 +36,9 @@
 - pca() output takes class c("spca_pca", "spca", "list").
 
 **Other cosmetic changes**
+- summary now returns cor_Pcs by default
+- removed ggplot warnings aboout missing data
+
 
 # spca 1.1.2
 - fixed cor_with_pcs sign in change_loadings_sign_spca

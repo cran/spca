@@ -1,36 +1,3 @@
-test_that("is.spca() detects valid and invalid objects", {
-  fit = spca(make_tall_data(), n_comps = 2, fat_matrix = FALSE)
-
-  expect_true(is.spca(fit))
-  expect_false(is.spca(list()))
-  expect_false(is.spca(NULL))
-})
-
-test_that("legacy spca fields remain supported", {
-  fit = spca(make_tall_data(), n_comps = 2, fat_matrix = FALSE)
-  legacy = fit
-  legacy$loadings = legacy$weights
-  legacy$weights = NULL
-  legacy$loadings_list = legacy$weights_list
-  legacy$weights_list = NULL
-
-  expect_true(is.spca(legacy))
-  expect_true(validate_spca(legacy, quiet = TRUE))
-  expect_equal(.get_spca_weights(legacy), fit$weights)
-  expect_equal(.get_spca_weights_list(legacy), fit$weights_list)
-  expect_equal(.get_spca_loadings(legacy), fit$weights)
-  expect_equal(.get_spca_loadings_list(legacy), fit$weights_list)
-
-  changed = NULL
-  expect_warning(
-    {
-      changed = change_weights_sign_spca(legacy, 1)
-    },
-    "change_sign"
-  )
-  expect_equal(changed$loadings[, 1], -legacy$loadings[, 1])
-  expect_equal(changed$loadings_list[[1]], -legacy$loadings_list[[1]])
-})
 
 test_that("print.spca() can return a table", {
   fit = spca(make_tall_data(), n_comps = 2, fat_matrix = FALSE)
@@ -57,7 +24,7 @@ test_that("change_sign() changes the requested component sign", {
   old_weights = fit$weights[, 1]
 
   changed = change_sign(
-    spca_obj = fit,
+    object = fit,
     index_to_change = 1
   )
 
@@ -80,17 +47,57 @@ test_that("legacy change_loadings_sign_spca() alias remains supported", {
   expect_equal(changed$weights[, 1], -fit$weights[, 1])
 })
 
+test_that("aggregate_by_group() returns a table", {
+  fit = spca(make_tall_data(), n_comps = 2, fat_matrix = FALSE)
+  groups = rep(c("A", "B"), length.out = nrow(fit$weights))
+  
+  tab = aggregate_by_group(fit, variable_groups = groups, print_table = FALSE,
+                           return_table = TRUE)
+  
+  expect_true(is.matrix(tab) || is.data.frame(tab))
+  expect_equal(nrow(tab), length(unique(groups)))
+  
+  # A single integer selects components 1:cols.
+  tab_first = aggregate_by_group(
+    fit, variable_groups = groups, cols = 2,
+    print_table = FALSE, return_table = TRUE
+  )
+  expect_equal(tab_first, tab)
+  
+  # A vector selects components in the specified order.
+  tab_reordered = aggregate_by_group(
+    fit, variable_groups = groups, cols = c(2, 1),
+    print_table = FALSE, return_table = TRUE
+  )
+  expect_equal(tab_reordered, tab[, c(2, 1), drop = FALSE])
+})
+
+
 test_that("show_weights() returns a list on request", {
   fit = spca(make_tall_data(), n_comps = 2, fat_matrix = FALSE)
-
+  
   cont = show_weights(
-    spca_obj = fit,
+    object = fit,
     print_list = FALSE,
     return_list = TRUE
   )
-
+  
   expect_type(cont, "list")
   expect_equal(length(cont), fit$n_comps)
+  
+  # A single integer selects components 1:cols.
+  cont_first = show_weights(
+    object = fit, cols = 2,
+    print_list = FALSE, return_list = TRUE
+  )
+  expect_equal(cont_first, cont)
+  
+  # A vector selects components in the specified order.
+  cont_reordered = show_weights(
+    object = fit, cols = c(2, 1),
+    print_list = FALSE, return_list = TRUE
+  )
+  expect_equal(cont_reordered, cont[c(2, 1)])
 })
 
 test_that("show_correlations() prints and returns both correlation matrices", {

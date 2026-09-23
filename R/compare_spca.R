@@ -19,14 +19,15 @@
 #' @param plot_weights A logical value (default \code{TRUE}). If \code{TRUE},
 #'   plot the weights or contributions.
 #' @param plot_type A character vector (default first element \code{"bars"}).
-#'   Values starting with \code{"b"} use bars; values starting with \code{"p"}
-#'   use points. Other values default to bars.
-#' @param methods_names An optional character vector (default \code{NULL}) with
-#'   one label per object. If \code{NULL}, labels are \code{M1}, ..., \code{Mk}.
+#'   Values starting with \code{"b"} use bars; values starting with
+#'    \code{"p"} use points. Other values default to bars.
+#' @param methods_names An optional character vector (default \code{NULL})
+#'  with one label per object. If \code{NULL}, labels are 
+#'  \code{M1}, ..., \code{Mk}.
 #' @param x_axis_var_names A logical value (default \code{FALSE}). If
 #'   \code{TRUE}, show variable names on the x axis of the weights plot.
-#' @param col_grouplines A character scalar (default \code{"red"}). Color of the
-#'   vertical group lines.
+#' @param col_grouplines A character scalar (default \code{"black"}). Color of
+#'  the vertical group lines.
 #' @param color_scale A character vector (default first element
 #'   \code{"ggplot"}). Color palette for bar plots. Accepted values are
 #'   \code{"ggplot"}, \code{"cbb"}, \code{"printsafe"}, and \code{"bw"}.
@@ -34,9 +35,12 @@
 #'   use short component names such as \code{C1.M1}; otherwise, use names such 
 #'   as \code{C1.object_name}.
 #' @param print_tables A logical value (default \code{TRUE}). If \code{FALSE},
-#'   suppress table printing. Takes priority over \code{print_weights}.
+#'   suppress all table printing. Takes priority over \code{print_weights}
+#'   and \code{print_summary}.
 #' @param print_weights A logical value (default \code{FALSE}). If \code{TRUE},
 #'   print the weights or contributions table.
+#' @param print_summary A logical value (default \code{TRUE}). If \code{TRUE},
+#'   print the summary statistics table when \code{print_tables = TRUE}.
 #' @param show_plot A logical value (default \code{TRUE}). If \code{TRUE}, show
 #'   the weights or contributions plot.
 #' @param return_tables A logical value (default \code{FALSE}). If \code{TRUE},
@@ -59,18 +63,19 @@
 compare_spca = function(
     obj_list,
     n_comps = NULL,
-    contributions = TRUE, # change to contributions if safe 
+    contributions = TRUE, 
     only_nonzero = TRUE,
     variable_groups = NULL,
     plot_weights = TRUE,
     plot_type = c("bars", "points"),
     methods_names = NULL,
     x_axis_var_names = FALSE,
-    col_grouplines = "red",
+    col_grouplines = "black",
     color_scale = c("ggplot", "cbb", "printsafe", "bw"), 
     col_short_names = TRUE,
     print_tables = TRUE,
     print_weights = FALSE,
+    print_summary = TRUE,
     show_plot = TRUE,
     return_tables = FALSE,
     return_plot = FALSE) {
@@ -85,6 +90,7 @@ compare_spca = function(
     plot_weights = plot_weights,
     col_short_names = col_short_names,
     print_weights = print_weights,
+    print_summary = print_summary,
     return_tables = return_tables,
     print_tables = print_tables,
     return_plot = return_plot,
@@ -148,7 +154,8 @@ compare_spca = function(
   
   if (print_tables == FALSE){
     print_weights = FALSE
-  }
+    print_summary = FALSE
+    }
   
 ## A is list of weights of all objects--------------
   if(contributions)
@@ -323,9 +330,20 @@ compare_spca = function(
   
   ## summary table ---------------
   ## sum_list is list of summaries for all objects
-
+  
+  which_pca = which(sapply(obj_list, function(x) inherits(x, "pca")))
+  
+  if (length(which_pca)> 0){
+    class(obj_list[[which_pca]]) = class(obj_list[[which_pca]])[-1]
+  }
+      
   sum_list = lapply(obj_list, summary, print_table = FALSE, return_table = TRUE,
                     cor_with_pc = TRUE) 
+  
+  if (length(which_pca)> 0){
+    class(obj_list[[which_pca]]) = c("pca", class(obj_list[[which_pca]]))
+  }
+  
   
   sum_matrix = matrix(0, nrow = nrow(sum_list[[1]]), ncol = n_objects *n_comps) 
   
@@ -365,8 +383,11 @@ compare_spca = function(
       writeLines(" ")
     }
     sum_matrix_fmt = format_summaries(sum_matrix, contributions)
-    message("Summary statistics")    
-    print(sum_matrix_fmt, quote = FALSE, justify = "right")
+    if (print_summary) {
+      sum_matrix_fmt = format_summaries(sum_matrix, contributions)
+      message("Summary statistics")
+      print(sum_matrix_fmt, quote = FALSE, justify = "right")
+    }
   }  
     ## out list------------------------  
     if(return_tables){
@@ -418,12 +439,20 @@ format_weights = function(A, cols, digits = 3, rows, noprint = 1E-03,
     colnames(A) = paste("sPC", seq_len(ncol(A)), sep = "")
   }
   
-  if (contributions == TRUE)
-    weight_matrix_fmt = format(round(A * 100, max(digits - 2, 0)),
-                drop0trailing = TRUE, justify = "centre")
-  else
-    weight_matrix_fmt = format(round(A, digits),
-                drop0trailing = TRUE, justify = "centre")
+  if (contributions == TRUE) {
+    decimals = max(digits - 2, 0)
+    weight_matrix_fmt = format(
+      round(A * 100, decimals),
+      nsmall = decimals, drop0trailing = FALSE,
+      scientific = FALSE, justify = "centre"
+    )
+  } else {
+    weight_matrix_fmt = format(
+      round(A, digits),
+      nsmall = digits, drop0trailing = FALSE,
+      scientific = FALSE, justify = "centre"
+    )
+  }
   
   nc = nchar(weight_matrix_fmt[1L], type = "c")
   weight_matrix_fmt[abs(A) < noprint] = paste(rep(" ", nc), collapse = "")

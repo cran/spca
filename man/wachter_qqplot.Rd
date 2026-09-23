@@ -2,7 +2,7 @@
 % Please edit documentation in R/pca_methods.R
 \name{wachter_qqplot}
 \alias{wachter_qqplot}
-\title{Wachter QQ Plot for Eigenvalues (Deprecated)}
+\title{Wachter qq Plot for Eigenvalues (Deprecated)}
 \usage{
 wachter_qqplot(
   eigenvalues,
@@ -22,29 +22,38 @@ wachter_qqplot(
 \item{eigenvalues}{A numeric vector of eigenvalues in decreasing order, or
 an object returned by \code{\link[=pca]{pca()}}.}
 
-\item{p}{An integer scalar or \code{NULL}. Number of variables.}
+\item{p}{An integer scalar or \code{NULL} (default \code{NULL}). Number of
+variables. If \code{NULL}, use the weight-matrix row count for a PCA object,
+or the number of supplied eigenvalues for a numeric vector.}
 
-\item{n}{An integer scalar. Number of observations.}
+\item{n}{An integer scalar with no default. Number of observations.
+For a PCA object, it can be omitted if stored in the object. For a
+numeric vector, it is required unless \code{gamma} is supplied.}
 
-\item{gamma}{A positive numeric scalar. Aspect ratio. If omitted, use
-\code{n / p}.}
+\item{gamma}{A positive numeric scalar with no default. Ratio of
+observations to variables. If omitted, use \code{n / p}, or infer the
+counts from a supplied PCA object.}
 
-\item{cor}{A logical scalar retained for compatibility.}
+\item{cor}{A logical scalar (default \code{TRUE}). Passed to \code{\link[=mp_qqplot]{mp_qqplot()}}
+for PCA-object input. Ignored for numeric-vector input, which always
+scales the theoretical quantiles to sum to \code{p}.}
 
-\item{common_var}{A positive numeric scalar. Common variance used for the
-Marchenko--Pastur quantiles.}
+\item{common_var}{A positive numeric scalar (default \code{1}). Assumed
+common population variance. Passed to \code{\link[=mp_qqplot]{mp_qqplot()}} for PCA objects.
+For numeric vectors, its scale is removed by the normalization to \code{p}.}
 
-\item{n_plot}{An integer scalar or \code{NULL}. Number of leading eigenvalues.}
+\item{n_plot}{An integer scalar or \code{NULL} (default \code{NULL}). Number of
+leading eigenvalues. If \code{NULL}, use all stored or supplied eigenvalues.}
 
-\item{n_fitline}{An integer scalar or \code{NULL}. If positive, fit a line
-using the last \code{n_fitline} points. If negative, exclude the largest
+\item{n_fitline}{An integer scalar or \code{NULL} (default \code{NULL}: no line).
+Zero also omits the line. If positive, fit a line using the last \code{n_fitline} points. If negative, exclude the largest
 \code{abs(n_fitline)} points.}
 
-\item{addtitle}{A logical scalar indicating whether to add a title.}
+\item{addtitle}{A logical scalar (default \code{TRUE}). Add a title.}
 
-\item{show_plot}{A logical scalar indicating whether to print the plot.}
+\item{show_plot}{A logical scalar (default \code{TRUE}). Print the plot.}
 
-\item{return_plot}{A logical scalar indicating whether to return the plot.}
+\item{return_plot}{A logical scalar (default \code{FALSE}). Return the plot.}
 }
 \value{
 If \code{return_plot = TRUE}, a \code{ggplot} object; otherwise \code{NULL}
@@ -52,13 +61,20 @@ invisibly.
 }
 \description{
 \code{wachter_qqplot()} is retained for backward compatibility. Use
-\code{\link[=qqplot_spca]{qqplot_spca()}} with objects returned by \code{\link[=pca]{pca()}} in new code.
+\code{\link[=mp_qqplot]{mp_qqplot()}} with objects returned by \code{\link[=pca]{pca()}} in new code.
 }
 \seealso{
 Other pca: 
+\code{\link{aggregate_by_group}()},
+\code{\link{change_sign}()},
+\code{\link{is.pca}()},
+\code{\link{mp_qqplot}()},
 \code{\link{pca}()},
-\code{\link{qqplot_spca}()},
-\code{\link{screeplot_spca}()},
+\code{\link{print.pca}()},
+\code{\link{scree_plot}()},
+\code{\link{show_correlations}()},
+\code{\link{show_weights}()},
 \code{\link{spca_screeplot}()}
 }
 \concept{pca}
+\keyword{internal}

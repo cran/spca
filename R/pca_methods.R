@@ -1,55 +1,177 @@
-# S3 methods for PCA diagnostic plots
-#
-# Required changes in pca():
-#   out$n_obs = nrow_data
-#   class(out) = c("spca_pca", "spca", "list")
-#
-# Call these methods after assigning the class:
-#   screeplot_spca(pca_fit = out, n_plot = neigen_toplot,
-#                  ylab = "eigenvalues")
-#   qqplot_spca(pca_fit = out, common_var = common_var,
-#               n_plot = neigen_toplot, n_fitline = NULL)
+#' Test for PCA Objects
+#'
+#' Check whether an object has class \code{pca} and contains the core
+#' elements produced by \code{pca()}.
+#'
+#' @param x An object to test.
+#'
+#' @details Performs a lightweight check of the class and the presence of
+#' core elements. It does not validate their values or dimensions.
+#' Scores and the number of observations are not required because they
+#' may be unavailable for covariance-matrix input.
+#'
+#' @return A logical value: \code{TRUE} if the required class and core
+#' elements are present, and \code{FALSE} otherwise.
+#'
+#' @examples
+#' data(holzinger)
+#' ho_pca = pca(holzinger, n_comps = 2, screeplot = FALSE, qq_plot = FALSE)
+#' is.pca(ho_pca)
+#' @family pca
+#' @export
+is.pca = function(x) {
+  inherits(x, "pca") &&
+    is.list(x) &&
+    (!is.null(x$weights) || !is.null(x$loadings)) &&
+    !is.null(x$contributions) &&
+    !is.null(x$vexp) &&
+    !is.null(x$vexp_pc) &&
+    !is.null(x$cvexp) &&
+    !is.null(x$rvexp) &&
+    !is.null(x$rcvexp) &&
+    !is.null(x$n_comps) &&
+    !is.null(x$cardinality) &&
+    (!is.null(x$weights_list) || !is.null(x$loadings_list)) &&
+    !is.null(x$indices) &&
+    !is.null(x$eigenvalues) &&
+    !is.null(x$cor_with_pc) &&
+    !is.null(x$tot_var) &&
+    !is.null(x$spc_cor)
+}
+#foreign generic====================
+#' @describeIn print.spca A \code{pca} object is printed identically to an
+#'   \code{spca} object.
+#' @exportS3Method
+print.pca = function(x, ...) {
+  print.spca(x, ...)
+}
 
-#' Wachter QQ Plot for PCA Eigenvalues
+#' @describeIn plot.spca A \code{pca} object is plotted identically to an
+#'   \code{spca} object.
+#' @exportS3Method
+plot.pca = function(x, ...) 
+{
+  plot.spca(x, ...)
+}
+
+#' @describeIn summary.spca Summarize a \code{pca} object using the shared
+#'   summary method.
+#' @exportS3Method
+summary.pca = function(
+    object, ...) {
+  summary.spca(object, ...)
+}
+
+# local generic============
+#' @describeIn aggregate_by_group Aggregate a \code{pca} object by group.
+#' @param ... Additional arguments passed to \code{aggregate_by_group.spca}.
+#' @exportS3Method
+aggregate_by_group.pca = function(object, ...) {
+  aggregate_by_group.spca(object, ...)
+}
+
+#' @describeIn show_weights The weights or contributions of a \code{pca} object are shown 
+#'   identically those of an \code{spca} object.
+#' @exportS3Method
+show_weights.pca = function(object, ...) {
+  show_weights.spca(object, ...)
+}
+
+#' @describeIn change_sign Change component signs in a \code{pca} object.
+#' @param ... Additional arguments passed to \code{change_sign.spca}.
+#' @exportS3Method
+change_sign.pca = function(object, ...) {
+  change_sign.spca(object, ...)
+}
+
+
+#specific to pca objects===============
+#' PCA Diagnostic qqplot
 #'
-#' Produce a QQ plot comparing the eigenvalues of a fitted PCA with
-#' Marchenko--Pastur (Wachter) theoretical quantiles.
+#' Produce a qq-plot comparing the eigenvalues of a fitted PCA with
+#' Marchenko--Pastur theoretical quantiles.
 #'
-#' @param pca_fit An object returned by [pca()].
-#' @param n_vars An integer scalar or `NULL`. Number of variables. If `NULL`,
+#' This diagnostic relies on Marchenko--Pastur theory for the null
+#' eigenvalue distribution of a (possibly high-dimensional) sample
+#' covariance matrix, and is therefore only meaningful for objects of
+#' class `"pca"` (i.e. objects returned by [pca()]). It does not apply
+#' to sparse fits returned by [spca()] (class `"spca"`), for which the
+#' reference distribution does not hold; no method is defined for that
+#' class, so calling it on such an object raises the standard
+#' "no applicable method" error rather than producing a plot.
+#'
+#' @param pca_fit An object of class `"pca"`, as returned by [pca()].
+#' @param n_vars An integer scalar or `NULL` (default `NULL`). Number of
+#'   variables. If `NULL`,
 #'   obtain it from the number of rows of `pca_fit$weights`.
-#' @param n_obs An integer scalar or `NULL`. Number of observations. If `NULL`,
+#' @param n_obs An integer scalar or `NULL` (default `NULL`). Number of
+#'   observations. If `NULL`,
 #'   obtain it from `pca_fit$n_obs`.
-#' @param gamma A positive numeric scalar or `NULL`. Aspect ratio. If `NULL`,
+#' @param gamma A positive numeric scalar or `NULL` (default `NULL`).
+#'   Ratio of observations to variables. If `NULL`,
 #'   use `n_obs / n_vars`.
-#' @param cor A logical scalar retained for compatibility.
-#' @param common_var A positive numeric scalar. Common variance used for the
-#'   Marchenko--Pastur quantiles.
-#' @param n_plot An integer scalar or `NULL`. Number of leading eigenvalues.
-#' @param n_fitline An integer scalar or `NULL`. If positive, fit a line using
+#' @param cor A logical scalar (default `TRUE`). If `TRUE`, use the
+#'   correlation-matrix reference: set `common_var = 1` and scale the
+#'   theoretical quantiles to sum to `n_vars`. If `FALSE`, retain the
+#'   covariance scale specified by `common_var`.
+#' @param common_var A positive numeric scalar or `NULL` (default `NULL`).
+#'   Assumed common population variance for the Marchenko--Pastur quantiles.
+#'   Required when `cor = FALSE`; set to 1 when `cor = TRUE`.
+#' @param n_plot An integer scalar or `NULL` (default `NULL`). Number of
+#'   leading eigenvalues. If `NULL`, use all stored or supplied eigenvalues.
+#' @param n_fitline An integer scalar or `NULL` (default `NULL`: no line).
+#'   Zero also omits the line. If positive, fit a line using
 #'   the last `n_fitline` points. If negative, exclude the largest
 #'   `abs(n_fitline)` points.
-#' @param addtitle A logical scalar indicating whether to add a title.
-#' @param show_plot A logical scalar indicating whether to print the plot.
-#' @param return_plot A logical scalar indicating whether to return the plot.
-#'
+#' @param addtitle A logical scalar (default `TRUE`). Add a title.
+#' @param show_plot A logical scalar (default `TRUE`). Print the plot.
+#' @param return_plot A logical scalar (default `FALSE`). Return the plot.
+#' @details
+#' The Marchenko--Pastur distribution depends on the ratio of variables to
+#' observations. The `gamma` argument uses its reciprocal, `n_obs / n_vars`,
+#' as required by `RMTstat::qmp`. Both counts must be available, even when
+#' `gamma` is supplied. The covariance reference assumes independent
+#' variables with a common population variance.
+#' With `cor = TRUE`, the theoretical quantiles are scaled to sum to
+#' `n_vars`. A warning is issued if the stored eigenvalues do not sum to
+#' `n_vars` within a tolerance of `1e-8 * n_vars`. This check assumes that
+#' all nonzero eigenvalues are stored; it does not establish that the
+#' original matrix is a correlation matrix.
+#' With `cor = FALSE`, the quantiles retain the scale set by `common_var`.
+#' A fitted line must use at least two of the plotted points.
+#' @examples
+#' data(holzinger)
+#' ho_pca = pca(holzinger)
+#' # from the screeplot we may choose to retain 4 components
+#' # produce a Wachter qqplot fitting a line to all but the largest 
+#' # 4 eigenvalues. 
+#' # Since pca was fitted using the data matrix, the fit carries the number 
+#' # of observations. Otherwise we would need to pass `n_obs` .
+#' mp_qqplot(ho_pca, n_fitline = -4)
+#' # The qq-plot indicates that the 4th eigenvalue is compatible 
+#' # with that of a random matrix. 
+#' 
 #' @return If `return_plot = TRUE`, a `ggplot` object; otherwise `NULL`
 #'   invisibly.
 #' @family pca
 #' @export
-qqplot_spca = function(
+mp_qqplot = function(
     pca_fit, n_vars = NULL, n_obs = NULL, gamma = NULL, cor = TRUE,
-    common_var = 1, n_plot = NULL, n_fitline = NULL, addtitle = TRUE,
+    common_var = NULL, n_plot = NULL, n_fitline = NULL, addtitle = TRUE,
     show_plot = TRUE, return_plot = FALSE) {
-  UseMethod("qqplot_spca")
+  UseMethod("mp_qqplot")
 }
 
-#' @rdname qqplot_spca
-#' @export
-qqplot_spca.spca_pca = function(
+
+#' @rdname mp_qqplot
+#' @exportS3Method
+mp_qqplot.pca = function(
     pca_fit, n_vars = NULL, n_obs = NULL, gamma = NULL, cor = TRUE,
-    common_var = 1, n_plot = NULL, n_fitline = NULL, addtitle = TRUE,
+    common_var = NULL, n_plot = NULL, n_fitline = NULL, addtitle = TRUE,
     show_plot = TRUE, return_plot = FALSE) {
+  
+  if (!is.pca(pca_fit))
+    stop("pca_fit must be a valid pca object", call. = FALSE)
 
   eigenvalues = pca_fit$eigenvalues
 
@@ -63,10 +185,9 @@ qqplot_spca.spca_pca = function(
     n_vars = nrow(.get_spca_weights(pca_fit))
 
   if (is.null(n_vars) || length(n_vars) != 1L || !is.numeric(n_vars) ||
-      is.na(n_vars) || n_vars < 1) {
-    stop("The number of variables is unavailable; supply a positive `n_vars`.",
-         call. = FALSE)
-  }
+      !is.finite(n_vars) || n_vars < 1|| n_vars != floor(n_vars))
+stop("n_vars must be a positive integer.", call. = FALSE)
+  
 
   if (is.null(n_obs))
     n_obs = pca_fit$n_obs
@@ -74,42 +195,55 @@ qqplot_spca.spca_pca = function(
   if (is.null(n_obs)) {
     stop(
       paste0("The number of observations is unavailable in `pca_fit`. ",
-             "Supply `n_obs` to produce a Wachter QQ plot."),
+             "Supply `n_obs` to produce a Wachter qq-plot."),
       call. = FALSE
     )
   }
 
-  if (length(n_obs) != 1L || !is.numeric(n_obs) || is.na(n_obs) ||
-      n_obs < 1) {
-    stop("`n_obs` must be a positive numeric scalar.", call. = FALSE)
+  if (length(n_obs) != 1L || !is.numeric(n_obs) || !is.finite(n_obs) ||
+      n_obs < 1 || n_obs != floor(n_obs)) {
+    stop("`n_obs` must be a positive integer.", call. = FALSE)
   }
 
   if (is.null(gamma))
     gamma = n_obs / n_vars
 
-  if (length(gamma) != 1L || !is.numeric(gamma) || is.na(gamma) ||
+  if (length(gamma) != 1L || !is.numeric(gamma) || !is.finite(gamma) ||
       gamma <= 0) {
     stop("`gamma` must be a positive numeric scalar.", call. = FALSE)
-  }
-
-  if (length(common_var) != 1L || !is.numeric(common_var) ||
-      is.na(common_var) || common_var <= 0) {
-    stop("`common_var` must be a positive numeric scalar.", call. = FALSE)
   }
 
   if (is.null(n_plot))
     n_plot = length(eigenvalues)
 
   if (length(n_plot) != 1L || !is.numeric(n_plot) || is.na(n_plot) ||
-      n_plot < 1L || n_plot > length(eigenvalues)) {
+      n_plot < 1L  || n_plot != floor(n_plot) || n_plot > length(eigenvalues)) {
     stop("`n_plot` must be between 1 and the number of eigenvalues.",
          call. = FALSE)
   }
-  n_plot = as.integer(n_plot)
 
+  validate_booleans(cor = cor)
+  
+  if (cor) {
+    common_var = 1
+    if (abs(sum((eigenvalues)) - n_vars) > 1e-8 * n_vars)
+        warning("Eigenvalues do not sum to n_vars; check whether cor = TRUE is
+                appropriate.")
+    } else if (is.null(common_var)) {
+    stop("For covariance matrices, supply common_var. The reference distribution
+    assumes equal population variances.", call. = FALSE)
+    }
+  
+  if (length(common_var) != 1L || !is.numeric(common_var) ||
+      !is.finite(common_var) || common_var <= 0) {
+    stop("`common_var` must be a positive numeric scalar.", call. = FALSE)
+  }
+  
   probs = ((n_vars - seq_len(n_vars) + 1) - 0.5) / n_vars
   mp_quantiles = RMTstat::qmp(p = probs, svr = gamma, var = common_var)
-  mp_quantiles = n_vars * mp_quantiles / sum(mp_quantiles)
+  
+  if (cor)
+    mp_quantiles = n_vars * mp_quantiles / sum(mp_quantiles)
 
   df = data.frame(
     expected = mp_quantiles[seq_len(n_plot)],
@@ -120,8 +254,13 @@ qqplot_spca.spca_pca = function(
     ggplot2::geom_point(size = 2, na.rm = TRUE) +
     theme_pca()
 
-  if (is.numeric(n_fitline) && length(n_fitline) == 1L &&
-      !is.na(n_fitline) && n_fitline != 0) {
+  if (!is.null(n_fitline)) {
+    if (length(n_fitline) != 1L || !is.numeric(n_fitline) ||
+        !is.finite(n_fitline) || n_fitline != floor(n_fitline))
+      stop("n_fitline must be NULL or a finite integer.", call. = FALSE)
+  }
+  
+  if (!is.null(n_fitline) && n_fitline != 0) {
     if (n_fitline < 0)
       n_fitline = n_plot + n_fitline
 
@@ -141,7 +280,7 @@ qqplot_spca.spca_pca = function(
   }
 
   if (addtitle) {
-    pl = pl + ggplot2::labs(title = "Wachter QQ-plot") +
+    pl = pl + ggplot2::labs(title = "Wachter qq-plot") +
       ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
   }
 
@@ -153,48 +292,58 @@ qqplot_spca.spca_pca = function(
   invisible(NULL)
 }
 
-#' @rdname qqplot_spca
-#' @export
-qqplot_spca.spca = function(
-    pca_fit, n_vars = NULL, n_obs = NULL, gamma = NULL, cor = TRUE,
-    common_var = 1, n_plot = NULL, n_fitline = NULL, addtitle = TRUE,
-    show_plot = TRUE, return_plot = FALSE) {
-  stop("`qqplot_spca()` applies only to objects returned by `pca()`.",
-       call. = FALSE)
-}
-
-#' Plot PCA Eigenvalues in a Screeplot
+#' S3 Method for Plotting PCA Eigenvalues in a Screeplot
 #'
 #' Plot the leading eigenvalues of a fitted PCA against component order.
 #'
-#' @param pca_fit An object returned by [pca()].
-#' @param n_plot An integer scalar or `NULL`. Number of leading eigenvalues.
-#' @param ylab A character scalar used as the y-axis label.
-#' @param addtitle A logical scalar indicating whether to add a title.
-#' @param show_plot A logical scalar indicating whether to print the plot.
-#' @param return_plot A logical scalar indicating whether to return the plot.
+#' This diagnostic applies only to objects of class `"pca"` (i.e. objects
+#' returned by [pca()]). It does not apply to sparse fits returned by
+#' [spca()] (class `"spca"`); no method is defined for that class, so
+#' calling it on such an object raises the standard "no applicable
+#' method" error rather than producing a plot.
 #'
+#' @param pca_fit An object of class `"pca"`, as returned by [pca()].
+#' @param n_plot An integer scalar or `NULL` (default `NULL`). Number of
+#'   leading eigenvalues. If `NULL`, use all stored or supplied eigenvalues.
+#' @param ylab A character scalar (default `"eigenvalues"`). Y-axis label.
+#' @param addtitle A logical scalar (default `TRUE`). Add a title.
+#' @param show_plot A logical scalar (default `TRUE`). Print the plot.
+#' @param return_plot A logical scalar (default `FALSE`). Return the plot.
+#'
+#' @examples
+#' data(holzinger)
+#' ho_pca = pca(holzinger, screeplot = FALSE)
+#' # the screeplot can be produced from `pca` directly.
+#' # It can be customized by saving it as a `ggplot` object 
+#' myscreeplot = scree_plot(ho_pca, return_plot = TRUE)
+#' myscreeplot  + ggplot2::geom_point(color = "red")
+#' 
 #' @return If `return_plot = TRUE`, a `ggplot` object; otherwise `NULL`
 #'   invisibly.
 #' @family pca
 #' @export
-screeplot_spca = function(
+scree_plot = function(
     pca_fit, n_plot = NULL, ylab = "eigenvalues", addtitle = TRUE,
     show_plot = TRUE, return_plot = FALSE) {
-  UseMethod("screeplot_spca")
+  UseMethod("scree_plot")
 }
 
-#' @rdname screeplot_spca
-#' @export
-screeplot_spca.spca_pca = function(
+#' @rdname scree_plot 
+#' @exportS3Method
+scree_plot.pca = function(
     pca_fit, n_plot = NULL, ylab = "eigenvalues", addtitle = TRUE,
     show_plot = TRUE, return_plot = FALSE) {
 
+  
+  if (!is.pca(pca_fit))
+    stop("pca_fit must be a valid pca object", call. = FALSE)
+  
   eigenvalues = pca_fit$eigenvalues
 
   if (!is.numeric(eigenvalues) || !is.null(dim(eigenvalues)) ||
       length(eigenvalues) < 1L || anyNA(eigenvalues)) {
-    stop("`pca_fit$eigenvalues` must be a numeric vector without missing values.",
+    stop("`pca_fit$eigenvalues` must be a numeric vector without missing 
+         values.",
          call. = FALSE)
   }
 
@@ -215,12 +364,18 @@ screeplot_spca.spca_pca = function(
 
   scree_pl = ggplot2::ggplot(
     df,
-    ggplot2::aes(x = order, y = eigenvalue)
-  ) +
+    ggplot2::aes(x = order, y = eigenvalue)) +
     ggplot2::geom_point(size = 2, na.rm = TRUE) +
     ggplot2::geom_line(na.rm = TRUE) +
     ggplot2::labs(y = ylab) +
-    theme_pca()
+    theme_pca() +
+    scale_x_continuous(
+      breaks = function(limits) {
+        b <- scales::breaks_pretty(n = 6)(limits)
+        b[abs(b - round(b)) < 1e-8]
+      },
+      minor_breaks = NULL
+    )
 
   if (addtitle) {
     scree_pl = scree_pl + ggplot2::labs(title = "Screeplot") +
@@ -235,57 +390,58 @@ screeplot_spca.spca_pca = function(
   invisible(NULL)
 }
 
-#' @rdname screeplot_spca
-#' @export
-screeplot_spca.spca = function(
-    pca_fit, n_plot = NULL, ylab = "eigenvalues", addtitle = TRUE,
-    show_plot = TRUE, return_plot = FALSE) {
-  stop("`screeplot_spca()` applies only to objects returned by `pca()`.",
-       call. = FALSE)
-}
-
 # Obsolete function interfaces retained for backward compatibility ============
 
-#' Wachter QQ Plot for Eigenvalues (Deprecated)
+#' Wachter qq Plot for Eigenvalues (Deprecated)
 #'
 #' `wachter_qqplot()` is retained for backward compatibility. Use
-#' [qqplot_spca()] with objects returned by [pca()] in new code.
+#' [mp_qqplot()] with objects returned by [pca()] in new code.
 #'
 #' @param eigenvalues A numeric vector of eigenvalues in decreasing order, or
 #'   an object returned by [pca()].
-#' @param p An integer scalar or `NULL`. Number of variables.
-#' @param n An integer scalar. Number of observations.
-#' @param gamma A positive numeric scalar. Aspect ratio. If omitted, use
-#'   `n / p`.
-#' @param cor A logical scalar retained for compatibility.
-#' @param common_var A positive numeric scalar. Common variance used for the
-#'   Marchenko--Pastur quantiles.
-#' @param n_plot An integer scalar or `NULL`. Number of leading eigenvalues.
-#' @param n_fitline An integer scalar or `NULL`. If positive, fit a line
-#'   using the last `n_fitline` points. If negative, exclude the largest
+#' @param p An integer scalar or `NULL` (default `NULL`). Number of
+#'   variables. If `NULL`, use the weight-matrix row count for a PCA object,
+#'   or the number of supplied eigenvalues for a numeric vector.
+#' @param n An integer scalar with no default. Number of observations.
+#'   For a PCA object, it can be omitted if stored in the object. For a
+#'   numeric vector, it is required unless `gamma` is supplied.
+#' @param gamma A positive numeric scalar with no default. Ratio of
+#'   observations to variables. If omitted, use `n / p`, or infer the
+#'   counts from a supplied PCA object.
+#' @param cor A logical scalar (default `TRUE`). Passed to [mp_qqplot()]
+#'   for PCA-object input. Ignored for numeric-vector input, which always
+#'   scales the theoretical quantiles to sum to `p`.
+#' @param common_var A positive numeric scalar (default `1`). Assumed
+#'   common population variance. Passed to [mp_qqplot()] for PCA objects.
+#'   For numeric vectors, its scale is removed by the normalization to `p`.
+#' @param n_plot An integer scalar or `NULL` (default `NULL`). Number of
+#'   leading eigenvalues. If `NULL`, use all stored or supplied eigenvalues.
+#' @param n_fitline An integer scalar or `NULL` (default `NULL`: no line).
+#'   Zero also omits the line. If positive, fit a line using the last `n_fitline` points. If negative, exclude the largest
 #'   `abs(n_fitline)` points.
-#' @param addtitle A logical scalar indicating whether to add a title.
-#' @param show_plot A logical scalar indicating whether to print the plot.
-#' @param return_plot A logical scalar indicating whether to return the plot.
+#' @param addtitle A logical scalar (default `TRUE`). Add a title.
+#' @param show_plot A logical scalar (default `TRUE`). Print the plot.
+#' @param return_plot A logical scalar (default `FALSE`). Return the plot.
 #'
 #' @return If `return_plot = TRUE`, a `ggplot` object; otherwise `NULL`
 #'   invisibly.
 #' @family pca
+#' @keywords internal
 #' @export
 wachter_qqplot = function(
     eigenvalues, p = NULL, n, gamma, cor = TRUE, common_var = 1,
     n_plot = NULL, n_fitline = NULL, addtitle = TRUE, show_plot = TRUE,
     return_plot = FALSE) {
-  .Deprecated("qqplot_spca")
+  .Deprecated("mp_qqplot")
 
-  if (inherits(eigenvalues, "spca_pca")) {
+  if (inherits(eigenvalues, "pca")) {
     if (is.null(p))
       p = nrow(.get_spca_weights(eigenvalues))
     n_value = if (missing(n)) NULL else n
     gamma_value = if (missing(gamma)) NULL else gamma
 
     return(
-      qqplot_spca(
+      mp_qqplot(
         pca_fit = eigenvalues,
         n_vars = p,
         n_obs = n_value,
@@ -368,7 +524,7 @@ wachter_qqplot = function(
   }
 
   if (addtitle) {
-    pl = pl + ggplot2::labs(title = "Wachter QQ-plot") +
+    pl = pl + ggplot2::labs(title = "Wachter qq-plot") +
       ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
   }
   if (show_plot)
@@ -381,28 +537,30 @@ wachter_qqplot = function(
 #' Plot Eigenvalues in a Scree Plot (Deprecated)
 #'
 #' `spca_screeplot()` is retained for backward compatibility. Use
-#' [screeplot_spca()] with objects returned by [pca()] in new code.
+#' [scree_plot()] with objects returned by [pca()] in new code.
 #'
 #' @param eigenvalues A numeric vector of eigenvalues, or an object returned
 #'   by [pca()].
-#' @param n_plot An integer scalar or `NULL`. Number of leading eigenvalues.
-#' @param ylab A character scalar used as the y-axis label.
-#' @param addtitle A logical scalar indicating whether to add a title.
-#' @param show_plot A logical scalar indicating whether to print the plot.
-#' @param return_plot A logical scalar indicating whether to return the plot.
+#' @param n_plot An integer scalar or `NULL` (default `NULL`). Number of
+#'   leading eigenvalues. If `NULL`, use all stored or supplied eigenvalues.
+#' @param ylab A character scalar (default `"eigenvalues"`). Y-axis label.
+#' @param addtitle A logical scalar (default `TRUE`). Add a title.
+#' @param show_plot A logical scalar (default `TRUE`). Print the plot.
+#' @param return_plot A logical scalar (default `FALSE`). Return the plot.
 #'
 #' @return If `return_plot = TRUE`, a `ggplot` object; otherwise `NULL`
 #'   invisibly.
 #' @family pca
+#' @keywords internal
 #' @export
 spca_screeplot = function(
     eigenvalues, n_plot = NULL, ylab = "eigenvalues", addtitle = TRUE,
     show_plot = TRUE, return_plot = FALSE) {
-  .Deprecated("screeplot_spca")
+  .Deprecated("scree_plot")
 
-  if (inherits(eigenvalues, "spca_pca")) {
+  if (inherits(eigenvalues, "pca")) {
     return(
-      screeplot_spca(
+      scree_plot(
         pca_fit = eigenvalues,
         n_plot = n_plot,
         ylab = ylab,

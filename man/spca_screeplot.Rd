@@ -17,15 +17,16 @@ spca_screeplot(
 \item{eigenvalues}{A numeric vector of eigenvalues, or an object returned
 by \code{\link[=pca]{pca()}}.}
 
-\item{n_plot}{An integer scalar or \code{NULL}. Number of leading eigenvalues.}
+\item{n_plot}{An integer scalar or \code{NULL} (default \code{NULL}). Number of
+leading eigenvalues. If \code{NULL}, use all stored or supplied eigenvalues.}
 
-\item{ylab}{A character scalar used as the y-axis label.}
+\item{ylab}{A character scalar (default \code{"eigenvalues"}). Y-axis label.}
 
-\item{addtitle}{A logical scalar indicating whether to add a title.}
+\item{addtitle}{A logical scalar (default \code{TRUE}). Add a title.}
 
-\item{show_plot}{A logical scalar indicating whether to print the plot.}
+\item{show_plot}{A logical scalar (default \code{TRUE}). Print the plot.}
 
-\item{return_plot}{A logical scalar indicating whether to return the plot.}
+\item{return_plot}{A logical scalar (default \code{FALSE}). Return the plot.}
 }
 \value{
 If \code{return_plot = TRUE}, a \code{ggplot} object; otherwise \code{NULL}
@@ -33,13 +34,20 @@ invisibly.
 }
 \description{
 \code{spca_screeplot()} is retained for backward compatibility. Use
-\code{\link[=screeplot_spca]{screeplot_spca()}} with objects returned by \code{\link[=pca]{pca()}} in new code.
+\code{\link[=scree_plot]{scree_plot()}} with objects returned by \code{\link[=pca]{pca()}} in new code.
 }
 \seealso{
 Other pca: 
+\code{\link{aggregate_by_group}()},
+\code{\link{change_sign}()},
+\code{\link{is.pca}()},
+\code{\link{mp_qqplot}()},
 \code{\link{pca}()},
-\code{\link{qqplot_spca}()},
-\code{\link{screeplot_spca}()},
+\code{\link{print.pca}()},
+\code{\link{scree_plot}()},
+\code{\link{show_correlations}()},
+\code{\link{show_weights}()},
 \code{\link{wachter_qqplot}()}
 }
 \concept{pca}
+\keyword{internal}

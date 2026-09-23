@@ -1,62 +1,78 @@
 #screeplot==========
-test_that("screeplot_spca() returns a ggplot object", {
+test_that("scree_plot() returns a ggplot object", {
   fit = pca(make_tall_data(), n_comps = 3, qq_plot = FALSE)
 
-  pl = screeplot_spca(fit, n_plot = 4, show_plot = FALSE,
+  pl = scree_plot(fit, n_plot = 4, show_plot = FALSE,
                       return_plot = TRUE)
 
   expect_s3_class(pl, "ggplot")
 })
 
-test_that("screeplot_spca() accepts pca objects", {
+test_that("scree_plot() accepts pca objects", {
   fit = pca(make_tall_data(), n_comps = 3, qq_plot = FALSE)
-  
+
   expect_no_error(
-    screeplot_spca(fit, show_plot = FALSE)
+    scree_plot(fit, show_plot = FALSE)
   )
 })
 
-test_that("screeplot_spca() rejects unsupported objects", {
+test_that("scree_plot() rejects unsupported objects", {
   expect_error(
-    screeplot_spca(list(values = 1:3), show_plot = FALSE),
+    scree_plot(list(values = 1:3), show_plot = FALSE),
     "no applicable method"
   )
 })
 
+test_that("scree_plot() rejects spca() fits", {
+  fit = spca(make_tall_data(), n_comps = 2, method = "cspca",
+             var_selection = "fwd", objective = "cvexp", fat_matrix = FALSE)
+
+  expect_error(
+    scree_plot(fit, show_plot = FALSE),
+    "no applicable method")
+})
+
 
 #qq-plot==========
-test_that("qqplot_spca() returns a ggplot object", {
+test_that("mp_qqplot() returns a ggplot object", {
   fit = pca(make_tall_data(), n_comps = 3, qq_plot = FALSE)
 
-  pl = qqplot_spca(fit, n_vars = nrow(fit$weights),
+  pl = mp_qqplot(fit, n_vars = nrow(fit$weights),
                    n_obs = nrow(make_tall_data()), n_plot = 4,
                    show_plot = FALSE, return_plot = TRUE)
 
   expect_s3_class(pl, "ggplot")
 })
 
-test_that("qqplot_spca() accepts pca objects", {
+test_that("mp_qqplot() accepts pca objects", {
   X = make_tall_data()
   fit = pca(X, n_comps = 3, qq_plot = FALSE)
-  
+
   expect_no_error(
-    qqplot_spca(
+    mp_qqplot(
       fit,
       n_vars = ncol(X),
       n_obs = nrow(X),
-      show_plot = FALSE
-    )
-  )
+      show_plot = FALSE))
 })
 
-test_that("qqplot_spca() rejects unsupported objects", {
+test_that("mp_qqplot() rejects unsupported objects", {
   expect_error(
-    qqplot_spca(
+    mp_qqplot(
       list(values = 1:3),
       n_vars = 3,
       n_obs = 10,
-      show_plot = FALSE
-    ),
+      show_plot = FALSE),
+    "no applicable method"
+  )
+})
+
+test_that("mp_qqplot() rejects spca() fits", {
+  fit = spca(make_tall_data(), n_comps = 2, method = "cspca",
+             var_selection = "fwd", objective = "cvexp", fat_matrix = FALSE)
+
+  expect_error(
+    mp_qqplot(fit, n_vars = 3, n_obs = 10, show_plot = FALSE),
     "no applicable method"
   )
 })
@@ -74,7 +90,7 @@ test_that("spca_screeplot() preserves the eigenvalue-vector interface", {
         return_plot = TRUE
       )
     },
-    "screeplot_spca"
+    "scree_plot"
   )
 
   expect_s3_class(pl, "ggplot")
@@ -94,7 +110,7 @@ test_that("spca_screeplot() accepts pca objects", {
         return_plot = TRUE
       )
     },
-    "screeplot_spca"
+    "scree_plot"
   )
 
   expect_s3_class(pl, "ggplot")
@@ -113,7 +129,7 @@ test_that("wachter_qqplot() preserves the eigenvalue-vector interface", {
         return_plot = TRUE
       )
     },
-    "qqplot_spca"
+    "mp_qqplot"
   )
 
   expect_s3_class(pl, "ggplot")
@@ -139,7 +155,7 @@ test_that("wachter_qqplot() accepts obsolete pca objects with loadings", {
         return_plot = TRUE
       )
     },
-    "qqplot_spca"
+    "'wachter_qqplot'"
   )
 
   expect_s3_class(pl, "ggplot")

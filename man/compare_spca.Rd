@@ -14,11 +14,12 @@ compare_spca(
   plot_type = c("bars", "points"),
   methods_names = NULL,
   x_axis_var_names = FALSE,
-  col_grouplines = "red",
+  col_grouplines = "black",
   color_scale = c("ggplot", "cbb", "printsafe", "bw"),
   col_short_names = TRUE,
   print_tables = TRUE,
   print_weights = FALSE,
+  print_summary = TRUE,
   show_plot = TRUE,
   return_tables = FALSE,
   return_plot = FALSE
@@ -46,17 +47,18 @@ Used to draw vertical group-separating lines in the weights plot.}
 plot the weights or contributions.}
 
 \item{plot_type}{A character vector (default first element \code{"bars"}).
-Values starting with \code{"b"} use bars; values starting with \code{"p"}
-use points. Other values default to bars.}
+Values starting with \code{"b"} use bars; values starting with
+\code{"p"} use points. Other values default to bars.}
 
-\item{methods_names}{An optional character vector (default \code{NULL}) with
-one label per object. If \code{NULL}, labels are \code{M1}, ..., \code{Mk}.}
+\item{methods_names}{An optional character vector (default \code{NULL})
+with one label per object. If \code{NULL}, labels are
+\code{M1}, ..., \code{Mk}.}
 
 \item{x_axis_var_names}{A logical value (default \code{FALSE}). If
 \code{TRUE}, show variable names on the x axis of the weights plot.}
 
-\item{col_grouplines}{A character scalar (default \code{"red"}). Color of the
-vertical group lines.}
+\item{col_grouplines}{A character scalar (default \code{"black"}). Color of
+the vertical group lines.}
 
 \item{color_scale}{A character vector (default first element
 \code{"ggplot"}). Color palette for bar plots. Accepted values are
@@ -67,10 +69,14 @@ use short component names such as \code{C1.M1}; otherwise, use names such
 as \code{C1.object_name}.}
 
 \item{print_tables}{A logical value (default \code{TRUE}). If \code{FALSE},
-suppress table printing. Takes priority over \code{print_weights}.}
+suppress all table printing. Takes priority over \code{print_weights}
+and \code{print_summary}.}
 
 \item{print_weights}{A logical value (default \code{FALSE}). If \code{TRUE},
 print the weights or contributions table.}
+
+\item{print_summary}{A logical value (default \code{TRUE}). If \code{TRUE},
+print the summary statistics table when \code{print_tables = TRUE}.}
 
 \item{show_plot}{A logical value (default \code{TRUE}). If \code{TRUE}, show
 the weights or contributions plot.}
@@ -107,12 +113,13 @@ Other spca:
 \code{\link{change_weights_sign_spca}()},
 \code{\link{is.spca}()},
 \code{\link{new_spca}()},
-\code{\link{plot.spca}()},
-\code{\link{print.spca}()},
+\code{\link{plot.pca}()},
+\code{\link{print.pca}()},
+\code{\link{show_contributions_spca}()},
 \code{\link{show_correlations}()},
 \code{\link{show_weights}()},
 \code{\link{spca}()},
 \code{\link{spca_object}},
-\code{\link{summary.spca}()}
+\code{\link{summary.pca}()}
 }
 \concept{spca}

@@ -10,12 +10,12 @@ pca(
   center_data = FALSE,
   scale_data = FALSE,
   fat_matrix = NULL,
-  screeplot = FALSE,
-  qq_plot = TRUE,
-  nrow_data = NULL,
+  screeplot = TRUE,
+  qq_plot = FALSE,
+  n_obs = NULL,
   neigen_toplot = NULL,
   cor = TRUE,
-  common_var = 1,
+  common_var = NULL,
   pm = FALSE,
   eps_pm = 1e-04,
   maxiter_pm = 1000
@@ -41,28 +41,28 @@ scale variables.}
 If \code{TRUE}, request the fat backend. If \code{FALSE}, use the tall
 backend. Covariance and correlation matrices always use the tall backend.}
 
-\item{screeplot}{A logical value (default \code{FALSE}). If \code{TRUE},
+\item{screeplot}{A logical value (default \code{TRUE}). If \code{TRUE},
 produce a scree plot.}
 
-\item{qq_plot}{A logical value (default \code{TRUE}). If \code{TRUE},
-produce a Wachter QQ plot with \code{\link{qqplot_spca}}.}
+\item{qq_plot}{A logical value (default \code{FALSE}). If \code{TRUE},
+produce a Wachter qq-plot with \code{\link{mp_qqplot}}.}
 
-\item{nrow_data}{An integer scalar or \code{NULL} (default \code{NULL}).
+\item{n_obs}{An integer scalar or \code{NULL} (default \code{NULL}).
 Number of rows in the original data set. Required when
 \code{qq_plot = TRUE} and \code{M} is a covariance or correlation
-matrix. If not available, the Wachter QQ-plot cannot be produced.}
+matrix. If not available, the Wachter qq-plot cannot be produced.}
 
 \item{neigen_toplot}{An integer scalar or \code{NULL} (default
 \code{NULL}). Number of eigenvalues to show in diagnostic plots. If
 \code{NULL}, all available eigenvalues are shown.}
 
-\item{cor}{A logical value (default \code{TRUE}). Currently accepted for
-compatibility; the diagnostic plot uses \code{common_var} for the
+\item{cor}{A logical value (default \code{TRUE}); the diagnostic plot uses \code{common_var} for the
 Marchenko--Pastur quantiles.}
 
-\item{common_var}{A numeric scalar (default \code{1}). Common variance of
-the variables used for the Marchenko--Pastur quantiles in the Wachter QQ
-plot.}
+\item{common_var}{A positive numeric scalar or \code{NULL} (default
+\code{NULL}). Common population variance assumed for the Wachter
+qq-plot. Required when \code{qq_plot = TRUE} and \code{cor = FALSE}.
+When \code{cor = TRUE}, the reference variance is set to 1.}
 
 \item{pm}{A logical value (default \code{FALSE}). If \code{TRUE}, compute
 the requested eigenpairs by power method and rank-one deflation.}
@@ -74,10 +74,10 @@ tolerance for the power method.}
 number of power-method iterations.}
 }
 \value{
-An \code{\link{spca_object}} with an additional
-\code{eigenvalues} vector containing the eigenvalues up to the rank used by
-the selected backend and \code{n_obs} stores the number of observations,
-if a data matrix is passed, or NULL.
+An \code{pca_object} which is the same as an \code{\link{spca_object}} with an additional \code{eigenvalues} vector
+containing the eigenvalues up to the rank used by the selected
+backend and \code{n_obs} stores the number of observations, if a data
+matrix is passed, or NULL.
 }
 \description{
 Compute a principal component analysis (PCA) and return the result as an
@@ -85,20 +85,30 @@ Compute a principal component analysis (PCA) and return the result as an
 }
 \details{
 \code{n_comps} controls how many components are retained in the
-returned object. The tall backend computes PCA from the covariance or
-correlation matrix. The fat backend computes PCA in row space and converts
-the retained eigenvectors back to variable weights.
+returned object.
+The tall backend computes PCA from the covariance or
+correlation matrix, so passing this saves its computation from the data
+matrix. If a covariance or correlation matrix is passed, the scores
+cannot be computed and are returned as \code{NULL}.
+The fat backend computes PCA in row space and converts the retained
+eigenvectors back to variable weights.
 }
 \examples{
 data(holzinger)
 ho_pca = pca(holzinger, n_comps = 4, screeplot = TRUE,
-             nrow_data = 144, qq_plot = TRUE)
+             n_obs = 144, qq_plot = TRUE)
 summary(ho_pca)
 }
 \seealso{
 Other pca: 
-\code{\link{qqplot_spca}()},
-\code{\link{screeplot_spca}()},
+\code{\link{aggregate_by_group}()},
+\code{\link{change_sign}()},
+\code{\link{is.pca}()},
+\code{\link{mp_qqplot}()},
+\code{\link{print.pca}()},
+\code{\link{scree_plot}()},
+\code{\link{show_correlations}()},
+\code{\link{show_weights}()},
 \code{\link{spca_screeplot}()},
 \code{\link{wachter_qqplot}()}
 }
